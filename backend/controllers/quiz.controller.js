@@ -1,66 +1,128 @@
 import Quiz from "../models/Quiz.js";
 import Progress from "../models/Progress.js";
-import Certificate from "../models/Certificate.js";
 import QuizAttempt from "../models/QuizAttempt.js";
-import QuizResult from "../models/QuizResult.js";
 
-/**
- * Get quiz questions for a course
- */
+
 export const getQuizByCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
+    const userId = req.user.id;
+
+    // 1️⃣ Check progress
+    const progress = await Progress.findOne({ userId, courseId });
+
+    // Calculate percent
+    let percent = 0;
+    if (progress) {
+      const total = (progress.totalTasks || 0) + (progress.totalLessons || 0);
+      const completed = (progress.completedTasks || 0) + (progress.completedLessons || 0);
+      percent = total === 0 ? 100 : Math.round((completed / total) * 100);
+    }
+
+    if (
+      !progress ||
+      (progress.totalTasks > 0 && progress.completedTasks !== progress.totalTasks)
+    ) {
+      return res.json({
+        locked: true,
+        message: "Complete all tasks to unlock quiz",
+        percent,
+        progress: percent
+      });
+    }
+
+    // 2️⃣ Load quiz questions
     const questions = await Quiz.find({ courseId });
-    res.json(questions);
+
+    // 3️⃣ Check if already attempted
+    const attempt = await QuizAttempt.findOne({ userId, courseId });
+
+    if (attempt) {
+      // If new questions were added (questions > answers), allow user to continue
+      if (questions.length > attempt.answers.length) {
+        return res.json({
+          attempted: false,
+          questions,
+          previousAnswers: attempt.answers, // Send previous answers to frontend
+          score: attempt.score,
+          percent,
+          progress: percent
+        });
+      }
+
+      return res.json({ attempted: true, score: attempt.score, percent, progress: percent });
+    }
+
+    res.json({
+      attempted: false,
+      questions,
+      percent,
+      progress: percent
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch quiz" });
+    console.error(err);
+    res.status(500).json({ message: "Failed to load quiz" });
   }
 };
 
+
 /**
- * Submit quiz answers and auto-update progress + certificate
- */
+ * Submit quiz answers and update progress*/
+
 export const submitQuiz = async (req, res) => {
   try {
-    const { userId, courseId, answers } = req.body;
-
-    const alreadyAttempted = await QuizAttempt.findOne({ userId, courseId });
-    if (alreadyAttempted) {
-      return res.status(400).json({ message: "Quiz already attempted" });
-    }
+    const userId = req.user.id;
+    const { courseId, answers } = req.body;
 
     const questions = await Quiz.find({ courseId });
+    let attempt = await QuizAttempt.findOne({ userId, courseId });
+
+    // If attempt exists and no new questions, block
+    if (attempt && attempt.answers.length === questions.length) {
+       return res.status(400).json({ message: "Quiz already submitted" });
+    }
 
     let score = 0;
     questions.forEach((q, i) => {
       if (q.correctAnswer === answers[i]) score++;
     });
 
-    await QuizAttempt.create({
-      userId,
-      courseId,
-      score,
-      attemptedAt: new Date()
-    });
+    // ✅ Save quiz attempt
+    if (attempt) {
+      attempt.answers = answers;
+      attempt.score = score;
+      attempt.attemptedAt = new Date();
+      await attempt.save();
+    } else {
+      await QuizAttempt.create({
+        userId,
+        courseId,
+        answers,
+        score,
+        attemptedAt: new Date()
+      });
+    }
 
-    // ✅ CREATE progress if not exists
+    // ✅ Find or create progress
     let progress = await Progress.findOne({ userId, courseId });
+
     if (!progress) {
       progress = await Progress.create({
         userId,
         courseId,
-        completedLessons: 1,
-        totalLessons: questions.length
+        completedTasks: 0,
+        totalTasks: 0,
+        quizScore: score
       });
     } else {
-      progress.completedLessons += 1;
+      progress.quizScore = score;
       await progress.save();
     }
 
     res.json({
       score,
       total: questions.length,
-      progress: progress.completedLessons
+      quizScore: score
     });
   } catch (err) {
     console.error(err);

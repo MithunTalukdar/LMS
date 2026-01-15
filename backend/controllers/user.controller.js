@@ -2,7 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 
 export const changePassword = async (req, res) => {
-  const { userId, oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id; // Get ID from token
 
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });

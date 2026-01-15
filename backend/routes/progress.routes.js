@@ -6,7 +6,21 @@ import { protect } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 /**
- * 📊 Teacher/Admin Analytics (course-wise)
+ * 📊 Student progress (used by StudentDashboard)
+ */
+router.get(
+  "/user/:userId",
+  protect(["student"]),
+  async (req, res) => {
+    const progress = await Progress.find({ userId: req.params.userId })
+      .populate("courseId", "title");
+
+    res.json(progress);
+  }
+);
+
+/**
+ * 📊 Teacher/Admin course-wise analytics
  */
 router.get(
   "/course/:courseId",
@@ -19,6 +33,9 @@ router.get(
   }
 );
 
+/**
+ * 📈 Overall analytics
+ */
 router.get(
   "/analytics",
   protect(["teacher", "admin"]),
@@ -26,16 +43,26 @@ router.get(
     try {
       const data = await Progress.aggregate([
         {
+          $project: {
+            courseId: 1,
+            percent: {
+              $cond: [
+                { $eq: ["$totalTasks", 0] },
+                0,
+                {
+                  $multiply: [
+                    { $divide: ["$completedTasks", "$totalTasks"] },
+                    100
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
           $group: {
             _id: "$courseId",
-            averageProgress: {
-              $avg: {
-                $multiply: [
-                  { $divide: ["$completedLessons", "$totalLessons"] },
-                  100
-                ]
-              }
-            }
+            averageProgress: { $avg: "$percent" }
           }
         }
       ]);

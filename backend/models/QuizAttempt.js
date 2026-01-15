@@ -1,8 +1,15 @@
 import mongoose from "mongoose";
 
 const quizAttemptSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId,
-  courseId: mongoose.Schema.Types.ObjectId,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course"
+  },
+  answers: [Number],
   score: Number,
   attemptedAt: Date
 });

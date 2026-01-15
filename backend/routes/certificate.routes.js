@@ -1,34 +1,24 @@
 import express from "express";
-import PDFDocument from "pdfkit";
-import Certificate from "../models/Certificate.js";
+import { protect } from "../middleware/auth.middleware.js";
+import { 
+  getMyCertificates, 
+  getCertificateById, 
+  getCertificateByCourse,
+  downloadCertificate 
+} from "../controllers/certificate.controller.js";
 
 const router = express.Router();
 
-router.get("/download/:id", async (req, res) => {
-  const cert = await Certificate.findById(req.params.id).populate("userId courseId");
+/* 📜 Get all certificates for logged-in user */
+router.get("/", protect(), getMyCertificates);
 
-  const doc = new PDFDocument({ size: "A4" });
+/* 🎓 Get certificate by Course ID */
+router.get("/course/:courseId", protect(), getCertificateByCourse);
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", "attachment; filename=certificate.pdf");
+/* 🔍 Get specific certificate by ID */
+router.get("/:id", protect(), getCertificateById);
 
-  doc.pipe(res);
-
-  doc.fontSize(26).text("Certificate of Completion", { align: "center" });
-  doc.moveDown();
-
-  doc.fontSize(18).text(
-    `This certifies that ${cert.userId.name} has successfully completed`,
-    { align: "center" }
-  );
-
-  doc.moveDown();
-  doc.fontSize(20).text(cert.courseId.title, { align: "center" });
-
-  doc.moveDown(2);
-  doc.fontSize(14).text("Issued by LMS Platform", { align: "center" });
-
-  doc.end();
-});
+/* 📥 Download certificate */
+router.get("/download/:id", downloadCertificate);
 
 export default router;

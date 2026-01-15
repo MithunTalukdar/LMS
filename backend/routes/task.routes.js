@@ -6,7 +6,8 @@ import {
   createTask,
   submitTask,
   gradeTask,
-  getStudentTasks
+  getStudentTasks,
+  getTeacherTasks
 } from "../controllers/task.controller.js";
 
 const router = express.Router();
@@ -27,12 +28,7 @@ router.get("/student/:courseId", protect(["student"]), getStudentTasks);
 router.get(
   "/teacher/:courseId",
   protect(["teacher", "admin"]),
-  async (req, res) => {
-    const tasks = await Task.find({ courseId: req.params.courseId })
-      .populate("submissions.studentId", "name email");
-
-    res.json(tasks);
-  }
+  getTeacherTasks
 );
 
 export default router;

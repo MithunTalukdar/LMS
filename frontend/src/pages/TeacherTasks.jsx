@@ -7,7 +7,7 @@ export default function TeacherTasks({ courseId }) {
   const [deadline, setDeadline] = useState("");
   const [tasks, setTasks] = useState([]);
 
-  /* 🔹 LOAD TEACHER TASKS */
+  /* 🔹 LOAD TASKS */
   useEffect(() => {
     if (!courseId) return;
 
@@ -43,7 +43,7 @@ export default function TeacherTasks({ courseId }) {
     }
   };
 
-  /* 🔹 GRADE TASK (FIXED) */
+  /* 🔹 GRADE TASK */
   const gradeTask = async (taskId, submissionId, status) => {
     try {
       await api.post("/tasks/grade", {
@@ -54,32 +54,37 @@ export default function TeacherTasks({ courseId }) {
 
       const res = await api.get(`/tasks/teacher/${courseId}`);
       setTasks(res.data);
-    } catch (err) {
+    } catch {
       alert("Failed to grade task");
     }
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow mb-6">
-      <h3 className="font-semibold mb-3">Create Task</h3>
+    <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+
+      <h3 className="text-lg font-semibold mb-4">
+        📌 Create Task
+      </h3>
 
       {/* 🔹 CREATE FORM */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <input
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg text-sm sm:text-base"
           placeholder="Task title"
           value={title}
           onChange={e => setTitle(e.target.value)}
         />
+
         <input
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg text-sm sm:text-base"
           placeholder="Task description"
           value={description}
           onChange={e => setDescription(e.target.value)}
         />
+
         <input
           type="date"
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg text-sm sm:text-base"
           value={deadline}
           onChange={e => setDeadline(e.target.value)}
         />
@@ -87,101 +92,113 @@ export default function TeacherTasks({ courseId }) {
 
       <button
         onClick={createTask}
-        className="mt-3 bg-blue-600 text-white px-4 py-2 rounded"
+        className="mt-4 w-full sm:w-auto bg-blue-600 hover:bg-blue-700
+        text-white px-6 py-2 rounded-lg transition"
       >
-        Create Task
+        ➕ Create Task
       </button>
 
       {/* 🔹 TASK LIST */}
-      <div className="mt-6">
-        <h4 className="font-semibold mb-3">Tasks</h4>
+      <div className="mt-8">
+        <h4 className="text-lg font-semibold mb-4">
+          📂 Tasks
+        </h4>
 
         {tasks.length === 0 && (
-          <p className="text-sm text-gray-500">No tasks yet</p>
+          <p className="text-sm text-gray-500">
+            No tasks yet
+          </p>
         )}
 
-        {tasks.map(task => {
-          const submissions = task.submissions || [];
-          const passedCount = submissions.filter(
-            s => s.status === "pass"
-          ).length;
+        <div className="space-y-5">
+          {tasks.map(task => {
+            const submissions = task.submissions || [];
+            const passedCount = submissions.filter(
+              s => s.status === "pass"
+            ).length;
 
-          return (
-            <div key={task._id} className="border rounded p-3 mb-4">
-              <div className="flex justify-between">
-                <p className="font-medium">{task.title}</p>
-                <span className="text-xs text-gray-500">
-                  Deadline: {new Date(task.deadline).toDateString()}
-                </span>
-              </div>
-
-              <p className="text-sm text-gray-600">{task.description}</p>
-
-              <p className="text-xs mt-1 text-green-700">
-                Passed: {passedCount} students
-              </p>
-
-              {/* 🔹 STUDENT SUBMISSIONS */}
-              <div className="mt-3">
-                <h5 className="font-semibold text-sm">
-                  Student Submissions
-                </h5>
-
-                {submissions.length === 0 && (
-                  <p className="text-xs text-gray-500">
-                    No submissions yet
+            return (
+              <div
+                key={task._id}
+                className="border rounded-xl p-4 bg-gray-50"
+              >
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                  <p className="font-medium text-gray-900">
+                    {task.title}
                   </p>
-                )}
 
-                {submissions.map(sub => (
-                  <div
-                    key={sub._id}
-                    className="flex justify-between items-center border rounded p-2 mt-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {sub.studentId?.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Status: {sub.status}
-                      </p>
-                    </div>
+                  <span className="text-xs text-gray-500">
+                    Deadline: {new Date(task.deadline).toDateString()}
+                  </span>
+                </div>
 
-                    {sub.status === "pending" && (
-                      <div className="space-x-2">
-                        <button
-                          onClick={() =>
-                            gradeTask(
-                              task._id,
-                              sub._id,
-                              "pass"
-                            )
-                          }
-                          className="bg-green-600 text-white px-3 py-1 rounded text-xs"
-                        >
-                          Pass
-                        </button>
+                <p className="text-sm text-gray-600 mt-1">
+                  {task.description}
+                </p>
 
-                        <button
-                          onClick={() =>
-                            gradeTask(
-                              task._id,
-                              sub._id,
-                              "fail"
-                            )
-                          }
-                          className="bg-red-600 text-white px-3 py-1 rounded text-xs"
-                        >
-                          Fail
-                        </button>
+                <p className="text-xs mt-2 text-green-700 font-medium">
+                  Passed: {passedCount} students
+                </p>
+
+                {/* 🔹 SUBMISSIONS */}
+                <div className="mt-4">
+                  <h5 className="font-semibold text-sm mb-2">
+                    👨‍🎓 Student Submissions
+                  </h5>
+
+                  {submissions.length === 0 && (
+                    <p className="text-xs text-gray-500">
+                      No submissions yet
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    {submissions.map(sub => (
+                      <div
+                        key={sub._id}
+                        className="flex flex-col sm:flex-row sm:justify-between sm:items-center
+                        gap-2 border rounded-lg p-3 bg-white"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {sub.studentId?.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Status: {sub.status}
+                          </p>
+                        </div>
+
+                        {sub.status === "pending" && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                gradeTask(task._id, sub._id, "pass")
+                              }
+                              className="bg-green-600 hover:bg-green-700
+                              text-white px-4 py-1.5 rounded text-xs"
+                            >
+                              Pass
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                gradeTask(task._id, sub._id, "fail")
+                              }
+                              className="bg-red-600 hover:bg-red-700
+                              text-white px-4 py-1.5 rounded text-xs"
+                            >
+                              Fail
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

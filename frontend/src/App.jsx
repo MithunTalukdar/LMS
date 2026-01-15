@@ -8,10 +8,11 @@ import Certificate from "./pages/Certificate";
 import Quiz from "./pages/Quiz";
 import Profile from "./pages/Profile";
 import TeacherDashboard from "./pages/TeacherDashboard";
-import AdminPanel from "./pages/AdminPanel";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./context/AuthContext";
 import RoleRoute from "./components/RoleRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+
 
 function App() {
   return (
@@ -50,7 +51,7 @@ function App() {
               path="admin"
               element={
                 <RoleRoute allowedRoles={["admin"]}>
-                  <AdminPanel />
+                  <AdminDashboard />
                 </RoleRoute>
               }
             />
