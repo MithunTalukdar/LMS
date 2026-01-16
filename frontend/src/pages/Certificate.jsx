@@ -5,6 +5,7 @@ import api from "../utils/axios";   // ✅ IMPORTANT
 export default function Certificate() {
   const { user } = useContext(AuthContext);
   const [certs, setCerts] = useState([]);
+  const [courses, setCourses] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -16,6 +17,15 @@ export default function Certificate() {
         console.error(err);
         setCerts([]);
       });
+
+    // Fetch courses to get titles if not populated in certificate
+    api.get("/courses")
+      .then(res => {
+        const courseMap = {};
+        res.data.forEach(c => courseMap[c._id] = c);
+        setCourses(courseMap);
+      })
+      .catch(err => console.error(err));
   }, [user]);
 
   if (certs.length === 0) {
@@ -26,8 +36,11 @@ export default function Certificate() {
     <div>
       <h2 className="text-xl font-bold mb-4">My Certificates</h2>
 
-      {certs.map(cert => (
-        <div
+      {certs.map(cert => {
+        const courseId = typeof cert.courseId === 'object' ? cert.courseId?._id : cert.courseId;
+        const courseTitle = cert.courseId?.title || courses[courseId]?.title || "Course";
+        return (
+          <div
           key={cert._id}
           className="bg-white p-8 rounded shadow mb-4 text-center"
         >
@@ -36,6 +49,7 @@ export default function Certificate() {
           <p className="mt-4">This certifies that</p>
           <h2 className="text-xl font-semibold mt-2">{user.name}</h2>
           <p className="mt-2">has successfully completed the course</p>
+          <h3 className="text-lg font-bold text-blue-600 mt-2">{courseTitle}</h3>
 
           {/* ✅ DOWNLOAD PDF */}
           <a
@@ -45,7 +59,7 @@ export default function Certificate() {
             Download Certificate
           </a>
         </div>
-      ))}
+      )})}
     </div>
   );
 }
