@@ -41,7 +41,7 @@ export default function MyCertificates() {
               </div>
               
               <a 
-                href={`http://localhost:5000/api/certificates/download/${cert._id}`}
+                href={`${api.defaults.baseURL}/certificates/download/${cert._id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"

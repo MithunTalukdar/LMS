@@ -53,7 +53,7 @@ export default function Certificate() {
 
           {/* ✅ DOWNLOAD PDF */}
           <a
-            href={`http://localhost:5000/api/certificates/download/${cert._id}`}
+            href={`${api.defaults.baseURL}/certificates/download/${cert._id}`}
             className="bg-green-600 text-white px-4 py-2 rounded inline-block mt-4"
           >
             Download Certificate

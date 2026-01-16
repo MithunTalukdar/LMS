@@ -19,7 +19,7 @@ export default function Certificates() {
 
   const handleDownload = (certId) => {
     // Open download link in new tab
-    window.open(`http://localhost:5000/api/certificates/download/${certId}`, "_blank");
+    window.open(`${api.defaults.baseURL}/certificates/download/${certId}`, "_blank");
   };
 
   if (loading) return <div className="p-6 text-gray-500">Loading certificates...</div>;
