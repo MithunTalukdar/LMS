@@ -1,24 +1,17 @@
-import api from "../utils/axios";
 import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
-  const { setUser } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const login = async () => {
+  const handleLogin = async () => {
     try {
-      const res = await api.post("/auth/login", {
-        email,
-        password
-      });
-
-      localStorage.setItem("token", res.data.token);
-      setUser(res.data.user);
+      await login({ email, password });
       navigate("/dashboard");
     } catch {
       alert("Invalid Credentials");
@@ -44,7 +37,7 @@ export default function Login() {
         />
 
         <button
-          onClick={login}
+          onClick={handleLogin}
           className="w-full bg-blue-600 text-white py-2 rounded"
         >
           Login
