@@ -10,13 +10,14 @@ export const getUserProgress = async (req, res) => {
     const { userId } = req.params;
 
     const progress = await Progress.find({ userId })
-      .populate("courseId", "title");
+      .populate("courseId", "title")
+      .lean();
 
     const progressWithPercent = progress.map(p => {
-      const total = (p.totalTasks || 0) + (p.totalLessons || 0);
-      const completed = (p.completedTasks || 0) + (p.completedLessons || 0);
-      const percent = total === 0 ? 100 : Math.round((completed / total) * 100);
-      return { ...p.toObject(), percent, progress: percent };
+      const total = (p.totalTasks || 0);
+      const completed = (p.completedTasks || 0);
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+      return { ...p, percent, progress: percent };
     });
 
     res.json(progressWithPercent);
@@ -33,13 +34,14 @@ export const getCourseProgress = async (req, res) => {
     const { courseId } = req.params;
 
     const progress = await Progress.find({ courseId })
-      .populate("userId", "name email");
+      .populate("userId", "name email")
+      .lean();
 
     const progressWithPercent = progress.map(p => {
-      const total = (p.totalTasks || 0) + (p.totalLessons || 0);
-      const completed = (p.completedTasks || 0) + (p.completedLessons || 0);
-      const percent = total === 0 ? 100 : Math.round((completed / total) * 100);
-      return { ...p.toObject(), percent, progress: percent };
+      const total = (p.totalTasks || 0);
+      const completed = (p.completedTasks || 0);
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+      return { ...p, percent, progress: percent };
     });
 
     res.json(progressWithPercent);
@@ -55,15 +57,16 @@ export const updateProgress = async (req, res) => {
   try {
     const { userId, courseId, completedLessons, totalLessons } = req.body;
 
-    const progress = await Progress.findOneAndUpdate(
+    const progressDoc = await Progress.findOneAndUpdate(
       { userId, courseId },
       { completedLessons, totalLessons },
       { new: true, upsert: true }
     );
 
-    const total = (progress.totalTasks || 0) + (progress.totalLessons || 0);
-    const completed = (progress.completedTasks || 0) + (progress.completedLessons || 0);
-    const percent = total === 0 ? 100 : Math.round((completed / total) * 100);
+    const p = progressDoc.toObject();
+    const total = (p.totalTasks || 0);
+    const completed = (p.completedTasks || 0);
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
     // 🔥 AUTO-CERTIFICATE GENERATION (Based on overall %)
     if (percent === 100) {
@@ -77,7 +80,7 @@ export const updateProgress = async (req, res) => {
       }
     }
 
-    res.json({ ...progress.toObject(), percent, progress: percent });
+    res.json({ ...p, percent, progress: percent });
   } catch (err) {
     res.status(500).json({ message: "Failed to update progress" });
   }
@@ -113,7 +116,7 @@ export const recalculateProgress = async (req, res) => {
     const completedLessons = currentProgress?.completedLessons || 0;
 
     // 3. Update Progress
-    const progress = await Progress.findOneAndUpdate(
+    const progressDoc = await Progress.findOneAndUpdate(
       { userId, courseId },
       {
         completedTasks,
@@ -125,9 +128,10 @@ export const recalculateProgress = async (req, res) => {
     );
 
     // 4. Calculate Percent
-    const total = (progress.totalTasks || 0) + (progress.totalLessons || 0);
-    const completed = (progress.completedTasks || 0) + (progress.completedLessons || 0);
-    const percent = total === 0 ? 100 : Math.round((completed / total) * 100);
+    const p = progressDoc.toObject();
+    const total = (p.totalTasks || 0);
+    const completed = (p.completedTasks || 0);
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
     // 🔥 AUTO-CERTIFICATE GENERATION
     if (percent === 100) {
@@ -141,7 +145,7 @@ export const recalculateProgress = async (req, res) => {
       }
     }
 
-    res.json({ ...progress.toObject(), percent, progress: percent });
+    res.json({ ...p, percent, progress: percent });
   } catch (err) {
     console.error("Recalculate error:", err);
     res.status(500).json({ message: "Failed to recalculate progress" });

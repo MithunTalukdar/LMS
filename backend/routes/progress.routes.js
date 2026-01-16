@@ -2,36 +2,28 @@ import express from "express";
 import Progress from "../models/Progress.js";
 import Course from "../models/Course.js";
 import { protect } from "../middleware/auth.middleware.js";
+import {
+  getUserProgress,
+  getCourseProgress,
+  recalculateProgress
+} from "../controllers/progress.controller.js";
 
 const router = express.Router();
 
 /**
  * 📊 Student progress (used by StudentDashboard)
  */
-router.get(
-  "/user/:userId",
-  protect(["student"]),
-  async (req, res) => {
-    const progress = await Progress.find({ userId: req.params.userId })
-      .populate("courseId", "title");
-
-    res.json(progress);
-  }
-);
+router.get("/user/:userId", protect(["student"]), getUserProgress);
 
 /**
  * 📊 Teacher/Admin course-wise analytics
  */
-router.get(
-  "/course/:courseId",
-  protect(["teacher", "admin"]),
-  async (req, res) => {
-    const progress = await Progress.find({ courseId: req.params.courseId })
-      .populate("userId", "name email");
+router.get("/course/:courseId", protect(["teacher", "admin"]), getCourseProgress);
 
-    res.json(progress);
-  }
-);
+/**
+ * 🔄 Force Recalculate (Fix inconsistencies)
+ */
+router.post("/recalculate", protect(), recalculateProgress);
 
 /**
  * 📈 Overall analytics

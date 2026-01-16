@@ -10,7 +10,7 @@ export default function Certificate() {
     if (!user) return;
 
     api
-      .get(`/certificates/${user._id}`)
+      .get("/certificates")
       .then(res => setCerts(res.data))
       .catch(err => {
         console.error(err);
@@ -39,7 +39,7 @@ export default function Certificate() {
 
           {/* ✅ DOWNLOAD PDF */}
           <a
-            href={`http://localhost:5000/api/certificates/download/${c._id}`}
+            href={`http://localhost:5000/api/certificates/download/${cert._id}`}
             className="bg-green-600 text-white px-4 py-2 rounded inline-block mt-4"
           >
             Download Certificate

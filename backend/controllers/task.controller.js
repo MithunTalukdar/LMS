@@ -33,56 +33,91 @@ export const submitTask = async (req, res) => {
   const task = await Task.findById(taskId);
   if (!task) return res.status(404).json({ message: "Task not found" });
 
-  // prevent resubmission
-  const alreadySubmitted = task.submissions?.some(
+  // Check if submission exists
+  const existingSubmission = task.submissions.find(
     s => s.studentId.toString() === req.user.id
   );
 
-  if (alreadySubmitted) {
-    return res.status(400).json({ message: "Already submitted" });
+  if (existingSubmission) {
+    if (existingSubmission.status === "pass") {
+      return res.status(400).json({ message: "Task already passed" });
+    }
+    // Update existing submission (retry)
+    existingSubmission.answer = answer;
+    existingSubmission.answerText = answer;
+    existingSubmission.status = "pending";
+    existingSubmission.submittedAt = new Date();
+  } else {
+    task.submissions.push({
+      studentId: req.user.id,
+      answer,
+      answerText: answer,
+      status: "pending",
+      submittedAt: new Date()
+    });
   }
-
-  task.submissions.push({
-    studentId: req.user.id,
-    answer,
-    status: "pending"
-  });
 
   await task.save();
 
-  res.json({ message: "Task submitted" });
+  res.json({ message: "Task submitted successfully" });
 };
 
 export const gradeTask = async (req, res) => {
-  const { taskId, submissionId, status } = req.body;
+  try {
+    const { taskId, submissionId, status, comment } = req.body;
 
-  const task = await Task.findById(taskId);
-  const submission = task.submissions.id(submissionId);
+    if (!taskId || !submissionId || !status) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
-  const previousStatus = submission.status;
-  submission.status = status;
-  await task.save();
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
 
-  // 🔥 UPDATE PROGRESS ONLY IF PASS
-  if (status === "pass" && previousStatus !== "pass") {
-    await Progress.findOneAndUpdate(
-      {
-        userId: submission.studentId,
-        courseId: task.courseId
-      },
-      { $inc: { completedTasks: 1 } }
-    );
-  } else if (previousStatus === "pass" && status !== "pass") {
-    await Progress.findOneAndUpdate(
-      {
-        userId: submission.studentId,
-        courseId: task.courseId
-      },
-      { $inc: { completedTasks: -1 } }
-    );
+    const submission = task.submissions.id(submissionId);
+    if (!submission) return res.status(404).json({ message: "Submission not found" });
+
+    const previousStatus = submission.status;
+    submission.status = status;
+    submission.comment = comment;
+    submission.isViewed = false; // 🔔 Mark as unread for student
+    await task.save();
+
+    // 🔥 UPDATE PROGRESS ONLY IF PASS
+    if (status === "pass" && previousStatus !== "pass") {
+      await Progress.findOneAndUpdate(
+        {
+          userId: submission.studentId,
+          courseId: task.courseId
+        },
+        { $inc: { completedTasks: 1 } }
+      );
+    } else if (previousStatus === "pass" && status !== "pass") {
+      await Progress.findOneAndUpdate(
+        {
+          userId: submission.studentId,
+          courseId: task.courseId
+        },
+        { $inc: { completedTasks: -1 } }
+      );
+    }
+
+    res.json({ message: "Task graded successfully", status, submission });
+  } catch (err) {
+    console.error("Grading error:", err);
+    res.status(500).json({ message: "Failed to grade task" });
   }
+};
 
-  res.json({ message: "Task graded" });
+export const getTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const task = await Task.findById(taskId).populate("submissions.studentId", "name email");
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    res.json(task);
+  } catch (err) {
+    console.error("Get task error:", err);
+    res.status(500).json({ message: "Failed to fetch task" });
+  }
 };
 
 export const getStudentTasks = async (req, res) => {
@@ -125,12 +160,10 @@ export const getStudentTasks = async (req, res) => {
     );
 
     // 📊 Calculate Overall Progress (Tasks + Lessons)
-    const totalLessons = Number(progressDoc.totalLessons || 0);
-    const completedLessons = Number(progressDoc.completedLessons || 0);
-    const total = tasks.length + totalLessons;
-    const completed = completedTasks + completedLessons;
+    const total = tasks.length;
+    const completed = completedTasks;
 
-    const percent = total === 0 ? 100 : Math.round((completed / total) * 100);
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
     // 🔥 AUTO-CERTIFICATE GENERATION
     if (percent === 100) {
@@ -173,5 +206,83 @@ export const getTeacherTasks = async (req, res) => {
     res.status(500).json({
       message: "Failed to fetch teacher tasks"
     });
+  }
+};
+
+/* 🔔 Get notification count for student */
+export const getStudentNotifications = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    // Count tasks with unread graded submissions
+    const tasks = await Task.find({
+      "submissions": {
+        $elemMatch: {
+          studentId: studentId,
+          status: { $in: ["pass", "fail"] },
+          isViewed: false
+        }
+      }
+    });
+    res.json({ count: tasks.length });
+  } catch (err) {
+    console.error("Notification error:", err);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+};
+
+/* 🔔 Mark task as read */
+export const markTaskAsRead = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const studentId = req.user.id;
+
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    const submission = task.submissions.find(s => s.studentId.toString() === studentId);
+    if (submission) {
+      submission.isViewed = true;
+      await task.save();
+    }
+
+    res.json({ message: "Marked as read" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update task" });
+  }
+};
+
+/* ✏️ Update Task */
+export const updateTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { title, description, deadline } = req.body;
+
+    const task = await Task.findByIdAndUpdate(
+      taskId,
+      { title, description, deadline },
+      { new: true }
+    );
+
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update task" });
+  }
+};
+
+/* 🗑️ Delete Task */
+export const deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const task = await Task.findByIdAndDelete(taskId);
+    
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // 🔥 Decrease totalTasks for all students in this course
+    await Progress.updateMany({ courseId: task.courseId }, { $inc: { totalTasks: -1 } });
+
+    res.json({ message: "Task deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete task" });
   }
 };

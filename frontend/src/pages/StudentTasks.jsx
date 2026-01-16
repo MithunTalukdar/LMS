@@ -77,6 +77,19 @@ export default function StudentTasks({ courseId, onAllTasksPassed }) {
     }
   };
 
+  /* 🔹 MARK AS READ */
+  const markAsRead = async (taskId) => {
+    try {
+      await api.put(`/tasks/${taskId}/read`);
+      setTasks(prev => prev.map(t => {
+        if (t._id === taskId && t.submission) {
+          return { ...t, submission: { ...t.submission, isViewed: true } };
+        }
+        return t;
+      }));
+    } catch (err) { console.error(err); }
+  };
+
   return (
     <div className="bg-white p-4 rounded shadow mb-4">
       <h3 className="font-semibold mb-3">
@@ -110,17 +123,33 @@ export default function StudentTasks({ courseId, onAllTasksPassed }) {
 
             {/* STATUS / ACTION */}
             {status ? (
-              <p
-                className={`mt-2 font-semibold ${
-                  status === "pass"
-                    ? "text-green-600"
-                    : status === "fail"
-                    ? "text-red-600"
-                    : "text-yellow-600"
-                }`}
-              >
-                {status.toUpperCase()}
-              </p>
+              <div className="mt-2">
+                <div className="flex items-center justify-between">
+                  <p
+                    className={`font-semibold ${
+                      status === "pass"
+                        ? "text-green-600"
+                        : status === "fail"
+                        ? "text-red-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {status.toUpperCase()}
+                  </p>
+                  {task.submission?.isViewed === false && (
+                    <button onClick={() => markAsRead(task._id)} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition">
+                      Mark as Read
+                    </button>
+                  )}
+                </div>
+
+                {task.submission?.comment && (
+                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <p className="font-bold text-gray-700 mb-1">Teacher Feedback:</p>
+                    <p className="text-gray-600 whitespace-pre-wrap">{task.submission.comment}</p>
+                  </div>
+                )}
+              </div>
             ) : (
               <button
                 onClick={() => submitTask(task._id)}

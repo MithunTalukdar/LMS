@@ -1,7 +1,6 @@
 import { useContext, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
 export default function Dashboard() {
@@ -17,10 +16,8 @@ export default function Dashboard() {
   }, [user]);
 
   return (
-    <div className="flex">
-      <Sidebar role={user.role} />
-
-      <div className="flex-1 bg-gray-100 min-h-screen">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto">
         <Topbar name={user.name} logout={logout} />
         <div className="p-6">
           <Outlet />

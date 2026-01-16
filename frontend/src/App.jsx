@@ -12,52 +12,61 @@ import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./context/AuthContext";
 import RoleRoute from "./components/RoleRoute";
 import AdminDashboard from "./pages/AdminDashboard";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          <Navbar />
+          <div className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          >
-            <Route index element={<Courses />} />
-            <Route path="courses" element={<Courses />} />
-            <Route path="progress" element={<Progress />} />
-            <Route path="certificates" element={<Certificate />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="quiz/:courseId" element={<Quiz />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={<Courses />} />
+                <Route path="courses" element={<Courses />} />
+                <Route path="progress" element={<Progress />} />
+                <Route path="certificates" element={<Certificate />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="quiz/:courseId" element={<Quiz />} />
 
-            {/* 👨‍🏫 TEACHER */}
-            <Route
-              path="teacher"
-              element={
-                <RoleRoute allowedRoles={["teacher"]}>
-                  <TeacherDashboard />
-                </RoleRoute>
-              }
-            />
+                {/* 👨‍🏫 TEACHER */}
+                <Route
+                  path="teacher"
+                  element={
+                    <RoleRoute allowedRoles={["teacher"]}>
+                      <TeacherDashboard />
+                    </RoleRoute>
+                  }
+                />
 
-            <Route
-              path="admin"
-              element={
-                <RoleRoute allowedRoles={["admin"]}>
-                  <AdminDashboard />
-                </RoleRoute>
-              }
-            />
+                <Route
+                  path="admin"
+                  element={
+                    <RoleRoute allowedRoles={["admin"]}>
+                      <AdminDashboard />
+                    </RoleRoute>
+                  }
+                />
 
-          </Route>
-        </Routes>
+              </Route>
+            </Routes>
+          </div>
+          <Footer />
+        </div>
       </BrowserRouter>
     </AuthProvider>
   );
