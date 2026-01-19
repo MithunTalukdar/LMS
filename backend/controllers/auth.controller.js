@@ -3,6 +3,7 @@ import Course from "../models/Course.js";
 import Progress from "../models/Progress.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import sendEmail from "../utils/sendEmail.js";
 
 export const register = async (req, res) => {
   try {
@@ -13,7 +14,12 @@ export const register = async (req, res) => {
        return res.status(400).json({ message: "All fields are required" });
     }
 
-    const lowerEmail = email ? email.toLowerCase().trim() : "";
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    // Remove all whitespace/newlines to prevent copy-paste errors
+    const lowerEmail = email ? email.toLowerCase().replace(/\s+/g, '') : "";
 
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
@@ -39,14 +45,15 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     console.log("🔹 Login Request:", req.body);
 
     if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const lowerEmail = email ? email.toLowerCase().trim() : "";
+    // Remove all whitespace/newlines to prevent copy-paste errors
+    const lowerEmail = email ? email.toLowerCase().replace(/\s+/g, '') : "";
 
     // 1. Try exact match (normalized)
     let user = await User.findOne({ email: lowerEmail });
@@ -70,6 +77,82 @@ export const login = async (req, res) => {
       }
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    // Check if OTP verification is needed (skip if verified within last 7 days)
+    const sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000;
+    if (user.lastOtpVerification && (Date.now() - new Date(user.lastOtpVerification).getTime() < sevenDaysInMillis)) {
+       const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: rememberMe ? "30d" : "1d" }
+      );
+
+      console.log("✅ Login successful (OTP skipped):", user.email);
+      
+      user.password = undefined; 
+      return res.status(200).json({ 
+          success: true, 
+          token, 
+          user 
+      });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save OTP to user
+    user.loginOtp = otp;
+    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Send OTP via Email
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Login Verification Code",
+        message: `Your login verification code is: ${otp}\n\nThis code expires in 10 minutes.`
+      });
+
+      return res.status(200).json({
+        success: true,
+        requireOtp: true,
+        message: "Verification code sent to your email",
+        email: user.email
+      });
+    } catch (emailError) {
+      console.error("Email send error:", emailError);
+      return res.status(500).json({ message: "Could not send verification email" });
+    }
+  } catch (err) {
+    console.error("❌ Login Error:", err);
+    res.status(500).json({ message: "Login failed" });
+  }
+};
+
+export const verifyLoginOtp = async (req, res) => {
+  try {
+    const { email, otp, rememberMe } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const lowerEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ 
+      email: lowerEmail,
+      loginOtp: otp,
+      loginOtpExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Clear OTP
+    user.loginOtp = undefined;
+    user.loginOtpExpire = undefined;
+    user.lastOtpVerification = Date.now();
+    await user.save();
 
     // 🔥 AUTO ENROLL FIRST COURSE (DEMO MODE)
     // 🔥 AUTO ENROLL (DEMO MODE ONLY)
@@ -96,11 +179,10 @@ export const login = async (req, res) => {
       }
     }
 
-
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: rememberMe ? "30d" : "1d" }
     );
 
     console.log("✅ Login successful:", user.email);
@@ -112,10 +194,9 @@ export const login = async (req, res) => {
         token, 
         user 
     });
-
   } catch (err) {
-    console.error("❌ Login Error:", err);
-    res.status(500).json({ message: "Login failed" });
+    console.error("❌ Verify OTP Error:", err);
+    res.status(500).json({ message: "Verification failed" });
   }
 };
 

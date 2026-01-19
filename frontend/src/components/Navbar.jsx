@@ -2,12 +2,15 @@ import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/axios";
+import LiveLink from "./LiveLink";
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (user?.role === "student") {
@@ -68,10 +71,16 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Link to="/login" className="text-gray-600 hover:text-blue-600 font-medium transition">Login</Link>
-              <Link to="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium">
+              <LiveLink href="/login" className="text-gray-600 hover:text-blue-600 font-medium transition" message="Logging In...">
+                Login
+              </LiveLink>
+              <LiveLink href="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" message="Creating Account...">
                 Register
-              </Link>
+              </LiveLink>
+              <LiveLink href={`${API_URL}/api/auth/google`} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2" message="Redirecting to Google...">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                <span>Google</span>
+              </LiveLink>
             </div>
           )}
         </div>
@@ -130,10 +139,16 @@ export default function Navbar() {
             </>
           ) : (
             <div className="flex flex-col gap-3 pt-2">
-              <Link to="/login" className="block text-center text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Login</Link>
-              <Link to="/register" className="block text-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" onClick={() => setIsOpen(false)}>
+              <LiveLink href="/login" className="block text-center text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)} message="Logging In...">
+                Login
+              </LiveLink>
+              <LiveLink href="/register" className="block text-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" onClick={() => setIsOpen(false)} message="Creating Account...">
                 Register
-              </Link>
+              </LiveLink>
+              <LiveLink href={`${API_URL}/api/auth/google`} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={() => setIsOpen(false)} message="Redirecting to Google...">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                <span>Google</span>
+              </LiveLink>
             </div>
           )}
         </div>

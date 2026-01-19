@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import passport from "passport";
 
 import authRoutes from "./routes/auth.routes.js";
 import courseRoutes from "./routes/course.routes.js";
@@ -23,6 +24,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(passport.initialize());
 app.use("/api/admin", adminRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/users", userRoutes);
@@ -37,6 +39,7 @@ app.use("/api/tasks", taskRoutes);
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("MongoDB Connected");
+    console.log("🚀 CLIENT_URL is currently:", process.env.CLIENT_URL || "NOT SET (Using default)");
     await seedCourses();   // 🔥 AUTO ADD COURSES
     app.listen(5000, () => console.log("Server running on 5000"));
   })

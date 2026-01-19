@@ -1,6 +1,7 @@
 import api from "../utils/axios";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -8,8 +9,12 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("loading");
 
   const register = async () => {
+    setIsSubmitting(true);
+    setLoadingStatus("loading");
     try {
       await api.post("/auth/register", {
         name,
@@ -17,10 +22,14 @@ export default function Register() {
         password
       });
 
-      alert("Registration successful!");
-      navigate("/");
+      setLoadingStatus("success");
+      setTimeout(() => {
+        alert("Registration successful!");
+        navigate("/");
+      }, 1500);
     } catch {
       alert("User already exists");
+      setIsSubmitting(false);
     }
   };
 
@@ -62,6 +71,15 @@ export default function Register() {
           </Link>
         </p>
       </div>
+
+      {isSubmitting && (
+        <LoadingOverlay 
+          message={loadingStatus === 'success' ? "Account Created!" : "Creating Account..."} 
+          status={loadingStatus} 
+          soundUrl={loadingStatus === 'success' ? "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" : ""}
+          onCancel={loadingStatus === 'loading' ? () => setIsSubmitting(false) : null} 
+        />
+      )}
     </div>
   );
 }

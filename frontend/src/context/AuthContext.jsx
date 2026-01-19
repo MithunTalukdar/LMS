@@ -9,9 +9,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkUserLoggedIn = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
       if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
           // ✅ 2. Call the backend to verify token and get user data
           const { data } = await api.get("/auth/me");
@@ -20,6 +21,8 @@ export const AuthProvider = ({ children }) => {
           // If token is invalid (expired, etc.), clear it
           console.error("Session expired or invalid:", error);
           localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          delete api.defaults.headers.common['Authorization'];
           setUser(null);
         }
       }
@@ -34,8 +37,18 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     // Adjust based on your actual login API response structure
     const { data } = await api.post("/auth/login", userData);
+    
+    if (data.requireOtp) {
+      return data;
+    }
+
     if (data.token) {
-        localStorage.setItem("token", data.token);
+        if (userData.rememberMe) {
+            localStorage.setItem("token", data.token);
+        } else {
+            sessionStorage.setItem("token", data.token);
+        }
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
         setUser(data.user);
         return data;
     }
@@ -43,10 +56,31 @@ export const AuthProvider = ({ children }) => {
     throw new Error("Login failed: No token received");
   };
 
+  const verifyOtp = async (otpData) => {
+    const { data } = await api.post("/auth/verify-otp", otpData);
+    if (data.token) {
+        if (otpData.rememberMe) {
+            localStorage.setItem("token", data.token);
+        } else {
+            sessionStorage.setItem("token", data.token);
+        }
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+        setUser(data.user);
+        return data;
+    }
+    throw new Error("Verification failed");
+  };
+
   const logout = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
     localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    window.location.href = "/login"; // Optional: Force redirect
+    setTimeout(() => {
+      window.location.href = "/login"; // Optional: Force redirect
+    }, 800);
   };
 
   // ✅ 4. Prevent rendering children until we know if the user is logged in
@@ -55,7 +89,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
