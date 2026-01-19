@@ -77,10 +77,10 @@ export default function Navbar() {
               <LiveLink href="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" message="Creating Account...">
                 Register
               </LiveLink>
-              <LiveLink href={`${API_URL}/api/auth/google`} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2" message="Redirecting to Google...">
+              <a href={`${API_URL}/auth/google`} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span>Google</span>
-              </LiveLink>
+              </a>
             </div>
           )}
         </div>
@@ -145,10 +145,10 @@ export default function Navbar() {
               <LiveLink href="/register" className="block text-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" onClick={() => setIsOpen(false)} message="Creating Account...">
                 Register
               </LiveLink>
-              <LiveLink href={`${API_URL}/api/auth/google`} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={() => setIsOpen(false)} message="Redirecting to Google...">
+              <a href={`${API_URL}/auth/google`} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={() => setIsOpen(false)}>
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span>Google</span>
-              </LiveLink>
+              </a>
             </div>
           )}
         </div>

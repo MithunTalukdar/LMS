@@ -19,7 +19,7 @@ export const register = async (req, res) => {
     }
 
     // Remove all whitespace/newlines to prevent copy-paste errors
-    const lowerEmail = email ? email.toLowerCase().replace(/\s+/g, '') : "";
+    const lowerEmail = email ? email.toLowerCase().trim() : "";
 
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
@@ -53,7 +53,7 @@ export const login = async (req, res) => {
     }
 
     // Remove all whitespace/newlines to prevent copy-paste errors
-    const lowerEmail = email ? email.toLowerCase().replace(/\s+/g, '') : "";
+    const lowerEmail = email ? email.toLowerCase().trim() : "";
 
     // 1. Try exact match (normalized)
     let user = await User.findOne({ email: lowerEmail });
@@ -108,11 +108,12 @@ export const login = async (req, res) => {
     // Send OTP via Email
     try {
       await sendEmail({
-        email: user.email,
+        email: lowerEmail,
         subject: "Login Verification Code",
         message: `Your login verification code is: ${otp}\n\nThis code expires in 10 minutes.`
       });
 
+      console.log(`📧 OTP sent to ${lowerEmail}`);
       return res.status(200).json({
         success: true,
         requireOtp: true,
@@ -120,8 +121,8 @@ export const login = async (req, res) => {
         email: user.email
       });
     } catch (emailError) {
-      console.error("Email send error:", emailError);
-      return res.status(500).json({ message: "Could not send verification email" });
+      console.error("❌ SMTP Error:", emailError);
+      return res.status(500).json({ message: "Email service unavailable. Please contact support." });
     }
   } catch (err) {
     console.error("❌ Login Error:", err);
@@ -137,7 +138,7 @@ export const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP are required" });
     }
 
-    const lowerEmail = email.toLowerCase().trim();
+    const lowerEmail = email ? email.toLowerCase().trim() : "";
     const user = await User.findOne({ 
       email: lowerEmail,
       loginOtp: otp,

@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { register, login, getMe, verifyLoginOtp } from "../controllers/auth.controller.js";
 import { forgotPassword, resetPassword } from "../controllers/password.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
+import jwt from "jsonwebtoken";
 import "../config/passport.js"; // ✅ Import passport config to register the strategy
 
 const router = express.Router();
@@ -24,8 +25,12 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false, failureRedirect: "/login" }),
   (req, res) => {
-    // Assuming your passport strategy attaches the generated token to req.user
-    const token = req.user.token; 
+    // Generate token here if not already attached by strategy
+    const token = jwt.sign(
+      { id: req.user._id, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
     
     // Generate a secure random code
     const code = crypto.randomBytes(16).toString("hex");

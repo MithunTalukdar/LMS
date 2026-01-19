@@ -172,10 +172,10 @@ export default function Login() {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
-            <LiveLink href={`${API_URL}/api/auth/google`} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium" message="Redirecting to Google...">
+            <a href={`${API_URL}/auth/google`} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               <span>Sign in with Google</span>
-            </LiveLink>
+            </a>
 
             <p className="text-center mt-4 text-sm">
               New user?{" "}
