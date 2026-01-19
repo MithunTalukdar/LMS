@@ -23,7 +23,10 @@ router.get("/google", passport.authenticate("google", { scope: ["profile", "emai
 // Handle Google Callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+  (req, res, next) => {
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    passport.authenticate("google", { session: false, failureRedirect: `${clientUrl}/login` })(req, res, next);
+  },
   (req, res) => {
     // Generate token here if not already attached by strategy
     const token = jwt.sign(

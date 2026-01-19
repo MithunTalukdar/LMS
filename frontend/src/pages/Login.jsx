@@ -20,7 +20,8 @@ export default function Login() {
   const [loadingStatus, setLoadingStatus] = useState("loading");
   const [soundUrl, setSoundUrl] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  // Normalize API_URL to prevent double /api/api issues
+  const BASE_API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/api\/?$/, "");
 
   useEffect(() => {
     let interval;
@@ -172,7 +173,7 @@ export default function Login() {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
-            <a href={`${API_URL}/auth/google`} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
+            <a href={`${BASE_API_URL}/api/auth/google`} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               <span>Sign in with Google</span>
             </a>
