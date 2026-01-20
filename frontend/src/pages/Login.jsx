@@ -107,6 +107,21 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = (e) => {
+    e.preventDefault();
+    // Play sound
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
+    audio.play().catch(err => console.warn(err));
+
+    setIsSubmitting(true);
+    setLoadingMessage("Redirecting to Google...");
+    setLoadingStatus("loading");
+
+    setTimeout(() => {
+      window.location.href = `${BASE_API_URL}/api/auth/google`;
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
@@ -173,7 +188,7 @@ export default function Login() {
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
-            <a href={`${BASE_API_URL}/api/auth/google`} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
+            <a href={`${BASE_API_URL}/api/auth/google`} onClick={handleGoogleLogin} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               <span>Sign in with Google</span>
             </a>

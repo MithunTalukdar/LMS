@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 import crypto from "crypto";
-import { register, login, getMe, verifyLoginOtp } from "../controllers/auth.controller.js";
+import { register, login, getMe, verifyLoginOtp, resendOtp } from "../controllers/auth.controller.js";
 import { forgotPassword, resetPassword } from "../controllers/password.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import jwt from "jsonwebtoken";
@@ -16,6 +16,7 @@ router.get("/me", protect(), getMe);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 router.post("/verify-otp", verifyLoginOtp);
+router.post("/resend-otp", protect(), resendOtp);
 
 // Initiate Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));

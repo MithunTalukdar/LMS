@@ -27,6 +27,17 @@ export default function Navbar() {
     setIsOpen(false);
   };
 
+  const handleGoogleLogin = (e) => {
+    e.preventDefault();
+    setIsOpen(false);
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
+    audio.play().catch(err => console.warn(err));
+
+    setTimeout(() => {
+      window.location.href = `${BASE_API_URL}/api/auth/google`;
+    }, 1000);
+  };
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="px-6 py-4 flex justify-between items-center">
@@ -78,7 +89,7 @@ export default function Navbar() {
               <LiveLink href="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" message="Creating Account...">
                 Register
               </LiveLink>
-              <a href={`${BASE_API_URL}/api/auth/google`} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2">
+              <a href={`${BASE_API_URL}/api/auth/google`} onClick={handleGoogleLogin} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span>Google</span>
               </a>
@@ -146,7 +157,7 @@ export default function Navbar() {
               <LiveLink href="/register" className="block text-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" onClick={() => setIsOpen(false)} message="Creating Account...">
                 Register
               </LiveLink>
-              <a href={`${BASE_API_URL}/api/auth/google`} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={() => setIsOpen(false)}>
+              <a href={`${BASE_API_URL}/api/auth/google`} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={handleGoogleLogin}>
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span>Google</span>
               </a>

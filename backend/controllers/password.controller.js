@@ -38,7 +38,7 @@ export const forgotPassword = async (req, res) => {
     });
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Email sending timed out")), 5000)
+      setTimeout(() => reject(new Error("Email sending timed out")), 15000)
     );
 
     await Promise.race([emailPromise, timeoutPromise]);

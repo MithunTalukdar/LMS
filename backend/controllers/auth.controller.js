@@ -32,7 +32,8 @@ export const register = async (req, res) => {
       name,
       email: lowerEmail,
       password: hashed,
-      role: role || "student"
+      role: role || "student",
+      lastOtpVerification: Date.now() // Auto-verify first login to skip OTP email
     });
 
     console.log("✅ User registered:", user.email);
@@ -115,7 +116,7 @@ export const login = async (req, res) => {
       });
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Email sending timed out")), 5000)
+        setTimeout(() => reject(new Error("Email sending timed out")), 10000)
       );
 
       await Promise.race([emailPromise, timeoutPromise]);
@@ -205,6 +206,46 @@ export const verifyLoginOtp = async (req, res) => {
   } catch (err) {
     console.error("❌ Verify OTP Error:", err);
     res.status(500).json({ message: "Verification failed" });
+  }
+};
+
+export const resendOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save OTP to user
+    user.loginOtp = otp;
+    user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    // Send OTP via Email
+    try {
+      const emailPromise = sendEmail({
+        email: user.email,
+        subject: "Verification Code",
+        message: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`
+      });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Email sending timed out")), 10000)
+      );
+
+      await Promise.race([emailPromise, timeoutPromise]);
+
+      res.status(200).json({ message: "Verification code sent" });
+    } catch (emailError) {
+      console.error("❌ Resend OTP Email Error:", emailError.message || emailError);
+      return res.status(500).json({ message: "Email service unavailable" });
+    }
+  } catch (err) {
+    console.error("❌ Resend OTP Error:", err);
+    res.status(500).json({ message: "Failed to resend OTP" });
   }
 };
 
