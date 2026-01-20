@@ -22,7 +22,10 @@ import taskRoutes from "./routes/task.routes.js";
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || "*",
+  credentials: true
+}));
 app.use(express.json());
 app.use(passport.initialize());
 app.use("/api/admin", adminRoutes);
@@ -36,12 +39,26 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/tasks", taskRoutes);
 
+// Health Check for Render
+app.get("/", (req, res) => res.send("Server is running..."));
+
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("MongoDB Connected");
-    console.log("🚀 CLIENT_URL is currently:", process.env.CLIENT_URL || "NOT SET (Using default)");
+
+    console.log("------------------------------------------------");
+    console.log("🚀 Server Startup Checks (Render Mode):");
+    console.log(`✅ CLIENT_URL: ${process.env.CLIENT_URL || "NOT SET (Using default)"}`);
+    console.log(`✅ SMTP_HOST: ${process.env.SMTP_HOST || "MISSING ❌"}`);
+    console.log(`✅ SMTP_PORT: ${process.env.SMTP_PORT || "MISSING ❌"}`);
+    console.log(`✅ SMTP_EMAIL: ${process.env.SMTP_EMAIL || "MISSING ❌"}`);
+    console.log(`✅ SMTP_PASSWORD: ${process.env.SMTP_PASSWORD ? "SET (Hidden)" : "MISSING ❌"}`);
+    console.log("------------------------------------------------");
+
     await seedCourses();   // 🔥 AUTO ADD COURSES
-    app.listen(5000, () => console.log("Server running on 5000"));
+    
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
 
   .catch(err => console.log(err));

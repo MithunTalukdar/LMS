@@ -4,7 +4,20 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
 export const forgotPassword = async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  // Normalize email to match auth controller logic
+  const lowerEmail = email.toLowerCase().trim();
+  let user = await User.findOne({ email: lowerEmail });
+
+  if (!user) {
+    // Try case-insensitive regex for legacy data
+    user = await User.findOne({ email: { $regex: new RegExp(`^${lowerEmail}$`, 'i') } });
+  }
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
@@ -22,7 +35,12 @@ export const forgotPassword = async (req, res) => {
   // Set expire (10 minutes)
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
-  await user.save();
+  try {
+    await user.save();
+  } catch (err) {
+    console.error("❌ Database Save Error:", err);
+    return res.status(500).json({ message: "Database error" });
+  }
 
   // Create reset url
   const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
@@ -45,11 +63,17 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({ success: true, data: "Email sent" });
   } catch (err) {
-    console.error("❌ Forgot Password Email Error:", err);
+    console.error("❌ Forgot Password Email FAILED:", err.message);
+    if (err.response) console.error("📝 SMTP Response:", err.response);
+    
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
-    await user.save({ validateBeforeSave: false });
+    try {
+      await user.save({ validateBeforeSave: false });
+    } catch (saveErr) {
+      console.error("⚠️ Failed to clear reset token:", saveErr.message);
+    }
 
     return res.status(500).json({ message: "Email could not be sent" });
   }

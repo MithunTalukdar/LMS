@@ -17,12 +17,12 @@ export default function ForgotPassword() {
     setMessage("");
     setError("");
     setIsSubmitting(true);
-    setLoadingMessage("Link sending In email...");
+    setLoadingMessage("Sending password reset link...");
     setLoadingStatus("loading");
     setSoundUrl("");
 
     try {
-      const res = await api.post("/auth/forgot-password", { email });
+      const res = await api.post("/auth/forgot-password", { email: email.trim() });
       setLoadingMessage("Link Sent Successfully!");
       setLoadingStatus("success");
       setSoundUrl("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
@@ -31,6 +31,7 @@ export default function ForgotPassword() {
         setIsSubmitting(false);
       }, 1500);
     } catch (err) {
+      console.error("Forgot Password Error:", err);
       setError(err.response?.data?.message || "Something went wrong");
       setIsSubmitting(false);
     }
@@ -53,6 +54,7 @@ export default function ForgotPassword() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmail(email.trim())}
           />
           <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Send Reset Link</button>
         </form>
