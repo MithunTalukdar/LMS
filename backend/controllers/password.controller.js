@@ -31,19 +31,25 @@ export const forgotPassword = async (req, res) => {
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
 
   try {
-    await sendEmail({
+    const emailPromise = sendEmail({
       email: user.email,
       subject: "Password Reset Token",
       message,
     });
 
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Email sending timed out")), 5000)
+    );
+
+    await Promise.race([emailPromise, timeoutPromise]);
+
     res.status(200).json({ success: true, data: "Email sent" });
   } catch (err) {
-    console.log(err);
+    console.error("❌ Forgot Password Email Error:", err);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     return res.status(500).json({ message: "Email could not be sent" });
   }

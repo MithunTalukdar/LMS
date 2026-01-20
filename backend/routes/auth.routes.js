@@ -25,7 +25,20 @@ router.get(
   "/google/callback",
   (req, res, next) => {
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-    passport.authenticate("google", { session: false, failureRedirect: `${clientUrl}/login` })(req, res, next);
+    
+    // Use a custom callback to debug why authentication fails
+    passport.authenticate("google", { session: false }, (err, user, info) => {
+      if (err) {
+        console.error("❌ Google OAuth Error:", err);
+        return res.redirect(`${clientUrl}/login?error=server_error`);
+      }
+      if (!user) {
+        console.error("⚠️ Google OAuth Failed (No User):", info);
+        return res.redirect(`${clientUrl}/login?error=auth_failed`);
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
   },
   (req, res) => {
     // Generate token here if not already attached by strategy

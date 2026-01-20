@@ -36,12 +36,7 @@ passport.use(
           });
         }
 
-        // Generate Token
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-          expiresIn: "30d",
-        });
-
-        return done(null, { token });
+        return done(null, user);
       } catch (error) {
         return done(error, null);
       }
