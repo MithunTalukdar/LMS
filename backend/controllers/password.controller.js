@@ -49,17 +49,11 @@ export const forgotPassword = async (req, res) => {
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
 
   try {
-    const emailPromise = sendEmail({
+    await sendEmail({
       email: user.email,
       subject: "Password Reset Token",
       message,
     });
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Email sending timed out")), 20000)
-    );
-
-    await Promise.race([emailPromise, timeoutPromise]);
 
     res.status(200).json({ success: true, data: "Email sent" });
   } catch (err) {
