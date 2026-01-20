@@ -18,7 +18,7 @@ router.put("/reset-password/:token", resetPassword);
 router.post("/verify-otp", verifyLoginOtp);
 
 // Initiate Google OAuth
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
 
 // Handle Google Callback
 router.get(

@@ -107,11 +107,18 @@ export const login = async (req, res) => {
 
     // Send OTP via Email
     try {
-      await sendEmail({
+      // Wrap sendEmail in a timeout to prevent hanging if SMTP is slow/blocked
+      const emailPromise = sendEmail({
         email: lowerEmail,
         subject: "Login Verification Code",
         message: `Your login verification code is: ${otp}\n\nThis code expires in 10 minutes.`
       });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Email sending timed out")), 5000)
+      );
+
+      await Promise.race([emailPromise, timeoutPromise]);
 
       console.log(`📧 OTP sent to ${lowerEmail}`);
       return res.status(200).json({
