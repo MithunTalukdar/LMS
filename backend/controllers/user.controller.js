@@ -12,7 +12,7 @@ export const changePassword = async (req, res) => {
   if (!isMatch) return res.status(400).json({ message: "Wrong password" });
 
   user.password = await bcrypt.hash(newPassword, 10);
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
   res.json({ message: "Password updated successfully" });
 };

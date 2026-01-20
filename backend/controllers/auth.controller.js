@@ -104,7 +104,7 @@ export const login = async (req, res) => {
     // Save OTP to user
     user.loginOtp = otp;
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // Send OTP via Email
     try {
@@ -161,7 +161,7 @@ export const verifyLoginOtp = async (req, res) => {
     user.loginOtp = undefined;
     user.loginOtpExpire = undefined;
     user.lastOtpVerification = Date.now();
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // 🔥 AUTO ENROLL FIRST COURSE (DEMO MODE)
     // 🔥 AUTO ENROLL (DEMO MODE ONLY)
@@ -222,7 +222,7 @@ export const resendOtp = async (req, res) => {
     // Save OTP to user
     user.loginOtp = otp;
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     // Send OTP via Email
     try {

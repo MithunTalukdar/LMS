@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  if (!email) {
+  if (!email || typeof email !== 'string') {
     return res.status(400).json({ message: "Email is required" });
   }
 
@@ -36,7 +36,7 @@ export const forgotPassword = async (req, res) => {
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
   try {
-    await user.save();
+    await user.save({ validateBeforeSave: false });
   } catch (err) {
     console.error("❌ Database Save Error:", err);
     return res.status(500).json({ message: "Database error" });
@@ -94,6 +94,10 @@ export const resetPassword = async (req, res) => {
     return res.status(400).json({ success: false, message: "Invalid or expired token" });
   }
 
+  if (!req.body.password) {
+    return res.status(400).json({ message: "Password is required" });
+  }
+
   // Hash new password
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(req.body.password, salt);
@@ -101,7 +105,7 @@ export const resetPassword = async (req, res) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
 
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
   res.status(200).json({ success: true, data: "Password updated successfully" });
 };
