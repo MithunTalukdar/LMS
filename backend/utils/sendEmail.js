@@ -1,49 +1,34 @@
 import nodemailer from "nodemailer";
 
-const sendEmail = async (options) => {
-  let transporter;
+const sendEmail = async ({ email, subject, message }) => {
+  try {
+    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+      throw new Error("SMTP credentials missing");
+    }
 
-  // Check if credentials exist
-  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-    console.error("❌ SMTP Error: SMTP_EMAIL or SMTP_PASSWORD is missing in environment variables.");
-  }
-
-  // Option 1: Use a Service (SendGrid, Mailgun, Gmail) if SMTP_SERVICE is set
-  if (process.env.SMTP_SERVICE) {
-    transporter = nodemailer.createTransport({
-      service: process.env.SMTP_SERVICE,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
       auth: {
         user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
+        pass: process.env.SMTP_PASSWORD, // App Password
       },
+      connectionTimeout: 10000, // ⏱ prevent ETIMEDOUT
     });
-  } else {
-    // Option 2: Use Generic SMTP (Host/Port)
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_PORT == "465",
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+
+    const mailOptions = {
+      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
+      to: email,
+      subject,
+      text: message,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log("✅ Forgot Password Email Sent Successfully");
+  } catch (error) {
+    console.error("❌ Forgot Password Email FAILED:", error);
+    throw error; // important for controller catch
   }
-
-  // Prevent using 'apikey' as the email address (common with SendGrid)
-  const fromEmail = process.env.FROM_EMAIL || (process.env.SMTP_EMAIL && process.env.SMTP_EMAIL.includes("@") ? process.env.SMTP_EMAIL : "noreply@example.com");
-
-  const message = {
-    from: `${process.env.FROM_NAME || "LMS Support"} <${fromEmail}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-  };
-
-  await transporter.sendMail(message);
 };
 
 export default sendEmail;
