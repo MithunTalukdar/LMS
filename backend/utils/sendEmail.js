@@ -3,6 +3,11 @@ import nodemailer from "nodemailer";
 const sendEmail = async (options) => {
   let transporter;
 
+  // Check if credentials exist
+  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+    console.error("❌ SMTP Error: SMTP_EMAIL or SMTP_PASSWORD is missing in environment variables.");
+  }
+
   // Option 1: Use a Service (SendGrid, Mailgun, Gmail) if SMTP_SERVICE is set
   if (process.env.SMTP_SERVICE) {
     transporter = nodemailer.createTransport({

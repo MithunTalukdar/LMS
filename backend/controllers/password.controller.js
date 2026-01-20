@@ -57,7 +57,7 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({ success: true, data: "Email sent" });
   } catch (err) {
-    console.error("❌ Forgot Password Email FAILED:", err.message);
+    console.error("❌ Forgot Password Email FAILED:", err);
     if (err.response) console.error("📝 SMTP Response:", err.response);
     
     user.resetPasswordToken = undefined;

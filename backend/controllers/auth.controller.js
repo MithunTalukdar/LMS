@@ -108,7 +108,6 @@ export const login = async (req, res) => {
 
     // Send OTP via Email
     try {
-      // Wrap sendEmail in a timeout to prevent hanging if SMTP is slow/blocked
       await sendEmail({
         email: lowerEmail,
         subject: "Login Verification Code",
