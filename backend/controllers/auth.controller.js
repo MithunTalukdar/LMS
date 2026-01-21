@@ -98,6 +98,35 @@ export const login = async (req, res) => {
       });
     }
 
+
+    // 🔴 CHECK IF EMAIL SERVICE IS AVAILABLE
+const emailEnabled =
+  process.env.SMTP_HOST &&
+  process.env.SMTP_PORT &&
+  process.env.SMTP_EMAIL &&
+  process.env.SMTP_PASSWORD;
+
+// 🚨 IF EMAIL IS NOT CONFIGURED → SKIP OTP
+if (!emailEnabled) {
+  console.warn("⚠️ Email service not available. Skipping OTP.");
+
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: rememberMe ? "30d" : "1d" }
+  );
+
+  user.password = undefined;
+
+  return res.status(200).json({
+    success: true,
+    token,
+    user,
+    otpSkipped: true
+  });
+}
+
+    
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
