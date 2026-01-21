@@ -69,7 +69,10 @@ export const forgotPassword = async (req, res) => {
       console.error("⚠️ Failed to clear reset token:", saveErr.message);
     }
 
-    return res.status(500).json({ message: "Email could not be sent" });
+    return res.status(500).json({ 
+      message: "Email could not be sent", 
+      error: err.message 
+    });
   }
 };
 

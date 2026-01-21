@@ -123,7 +123,10 @@ export const login = async (req, res) => {
       });
     } catch (emailError) {
       console.error("❌ SMTP Error in Production:", emailError.message || emailError);
-      return res.status(500).json({ message: "Email service unavailable. Please contact support." });
+      return res.status(500).json({ 
+        message: "Email service unavailable. Check server logs.", 
+        error: emailError.message 
+      });
     }
   } catch (err) {
     console.error("❌ Login Error:", err);
