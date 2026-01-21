@@ -122,12 +122,16 @@ export const login = async (req, res) => {
         email: user.email
       });
     } catch (emailError) {
-      console.error("❌ SMTP Error in Production:", emailError.message || emailError);
-      return res.status(500).json({ 
-        message: "Email service unavailable. Check server logs.", 
-        error: emailError.message 
-      });
-    }
+  console.error("❌ OTP email failed:", emailError.message);
+
+  return res.status(200).json({
+    success: true,
+    requireOtp: true,
+    message: "OTP generated, but email service is unavailable.",
+    email: user.email,
+    devOtp: process.env.NODE_ENV !== "production" ? otp : undefined
+  });
+}
   } catch (err) {
     console.error("❌ Login Error:", err);
     res.status(500).json({ message: "Login failed" });
