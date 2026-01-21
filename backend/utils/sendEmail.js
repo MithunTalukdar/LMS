@@ -1,33 +1,46 @@
 import nodemailer from "nodemailer";
 
-const sendEmail = async ({ email, subject, message }) => {
-  try {
-    if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-      throw new Error("SMTP credentials missing");
-    }
+const sendEmail = async (options) => {
+  // 🚫 Skip email if SMTP not configured
+  if (
+    !process.env.SMTP_HOST ||
+    !process.env.SMTP_PORT ||
+    !process.env.SMTP_EMAIL ||
+    !process.env.SMTP_PASSWORD
+  ) {
+    console.warn("⚠️ SMTP not configured. Skipping email.");
+    return;
+  }
 
+  try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: false,
       auth: {
         user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD, // App Password
+        pass: process.env.SMTP_PASSWORD,
       },
-      connectionTimeout: 10000, // ⏱ prevent ETIMEDOUT
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
 
-    const mailOptions = {
-      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
-      to: email,
-      subject,
-      text: message,
-    };
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL || `"LMS Support" <no-reply@lms.com>`,
+      to: options.email,
+      subject: options.subject,
+      text: options.message,
+    });
 
-    await transporter.sendMail(mailOptions);
-
-    console.log("✅ Forgot Password Email Sent Successfully");
+    console.log("✅ Email sent:", options.email);
   } catch (error) {
-    console.error("❌ Forgot Password Email FAILED:", error);
-    throw error; // important for controller catch
+    console.error("❌ Email failed:", error.message);
+
+    // ❗ NEVER crash production app for email
+    if (process.env.NODE_ENV !== "production") {
+      throw error;
+    }
   }
 };
 
