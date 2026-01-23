@@ -98,35 +98,6 @@ export const login = async (req, res) => {
       });
     }
 
-
-    // 🔴 CHECK IF EMAIL SERVICE IS AVAILABLE
-const emailEnabled =
-  process.env.SMTP_HOST &&
-  process.env.SMTP_PORT &&
-  process.env.SMTP_EMAIL &&
-  process.env.SMTP_PASSWORD;
-
-// 🚨 IF EMAIL IS NOT CONFIGURED → SKIP OTP
-if (!emailEnabled) {
-  console.warn("⚠️ Email service not available. Skipping OTP.");
-
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: rememberMe ? "30d" : "1d" }
-  );
-
-  user.password = undefined;
-
-  return res.status(200).json({
-    success: true,
-    token,
-    user,
-    otpSkipped: true
-  });
-}
-
-    
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
@@ -137,6 +108,8 @@ if (!emailEnabled) {
 
     // Send OTP via Email
     try {
+      console.log("📧 Sending OTP Email...");
+      console.log(`Attempting connection to ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
       await sendEmail({
         email: lowerEmail,
         subject: "Login Verification Code",
@@ -151,16 +124,12 @@ if (!emailEnabled) {
         email: user.email
       });
     } catch (emailError) {
-  console.error("❌ OTP email failed:", emailError.message);
-
-  return res.status(200).json({
-    success: true,
-    requireOtp: true,
-    message: "OTP generated, but email service is unavailable.",
-    email: user.email,
-    devOtp: process.env.NODE_ENV !== "production" ? otp : undefined
-  });
-}
+      console.error("❌ SMTP Error:", emailError.code === 'ETIMEDOUT' ? "Connection Timeout" : emailError.message);
+      return res.status(500).json({ 
+        message: "Email service timed out. Please try again in a moment.", 
+        error: emailError.code 
+      });
+    }
   } catch (err) {
     console.error("❌ Login Error:", err);
     res.status(500).json({ message: "Login failed" });
