@@ -108,8 +108,6 @@ export const login = async (req, res) => {
 
     // Send OTP via Email
     try {
-      console.log("📧 Sending OTP Email...");
-      console.log(`Attempting connection via ${process.env.SMTP_SERVICE || process.env.SMTP_HOST || 'SMTP'}`);
       await sendEmail({
         email: lowerEmail,
         subject: "Login Verification Code",

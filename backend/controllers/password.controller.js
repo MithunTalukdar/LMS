@@ -49,8 +49,6 @@ export const forgotPassword = async (req, res) => {
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
 
   try {
-    console.log("📧 Sending Password Reset Email...");
-    console.log(`Attempting connection via ${process.env.SMTP_SERVICE || process.env.SMTP_HOST || 'SMTP'}`);
     await sendEmail({
       email: user.email,
       subject: "Password Reset Token",
