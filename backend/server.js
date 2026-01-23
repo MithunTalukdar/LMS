@@ -52,6 +52,8 @@ mongoose.connect(process.env.MONGO_URI)
     console.log(`✅ CLIENT_URL: ${process.env.CLIENT_URL || "NOT SET"}`);
     console.log(`✅ BREVO_API_KEY: ${process.env.BREVO_API_KEY ? "SET (Hidden)" : "MISSING ❌"}`);
     console.log(`✅ EMAIL_FROM: ${process.env.EMAIL_FROM || "MISSING ❌"}`);
+    console.log(`✅ BREVO_OTP_TEMPLATE_ID: ${process.env.BREVO_OTP_TEMPLATE_ID || "Not Set (Using HTML Fallback) ⚠️"}`);
+    console.log(`✅ BREVO_WELCOME_TEMPLATE_ID: ${process.env.BREVO_WELCOME_TEMPLATE_ID || "Not Set (Using HTML Fallback) ⚠️"}`);
     console.log("------------------------------------------------");
 
     console.log("------------------------------------------------");

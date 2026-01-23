@@ -14,6 +14,7 @@ export default function Login() {
   const [step, setStep] = useState(1); // 1: Credentials, 2: OTP
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const [timer, setTimer] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -38,6 +39,7 @@ export default function Login() {
     setLoadingMessage("Logging In...");
     setLoadingStatus("loading");
     setSoundUrl("");
+    setError("");
     try {
       const res = await login({ email, password, rememberMe });
       if (res.requireOtp) {
@@ -57,9 +59,27 @@ export default function Login() {
           navigate("/dashboard");
         }, 1500);
       }
-    } catch (error) {
-      console.error("Login failed:", error);
-      alert(error.response?.data?.message || "Invalid Credentials");
+    } catch (err) {
+      console.error("Login failed:", err);
+      const errorMessage = err.response?.data?.message || "Invalid Credentials";
+      
+      // Resilient check: If backend returns 403 for unverified users, transition to OTP step
+      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("verify")) {
+        setLoadingMessage("Verification Required...");
+        setLoadingStatus("success");
+        setTimeout(() => {
+          setStep(2);
+          setTimer(60);
+          setIsSubmitting(false);
+        }, 1500);
+        return;
+      }
+
+      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
+        setError(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
       setIsSubmitting(false);
     }
   };
@@ -69,6 +89,7 @@ export default function Login() {
     setLoadingMessage("Verifying Code...");
     setLoadingStatus("loading");
     setSoundUrl("");
+    setError("");
     try {
       await verifyOtp({ email, otp, rememberMe });
       setLoadingMessage("Verification Successful!");
@@ -77,8 +98,14 @@ export default function Login() {
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
-    } catch {
-      alert("Invalid or expired OTP");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Invalid or expired OTP";
+      
+      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
+        setError(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
       setIsSubmitting(false);
     }
   };
@@ -88,6 +115,7 @@ export default function Login() {
     setIsSubmitting(true);
     setLoadingMessage("Resending OTP...");
     setLoadingStatus("loading");
+    setError("");
     setSoundUrl("");
     try {
       const res = await login({ email, password, rememberMe });
@@ -100,9 +128,15 @@ export default function Login() {
           setIsSubmitting(false);
         }, 1500);
       }
-    } catch (error) {
-      console.error("Resend failed:", error);
-      alert("Failed to resend OTP");
+    } catch (err) {
+      console.error("Resend failed:", err);
+      const errorMessage = err.response?.data?.message || "Failed to resend OTP";
+      
+      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
+        setError(errorMessage);
+      } else {
+        alert(errorMessage);
+      }
       setIsSubmitting(false);
     }
   };
@@ -126,6 +160,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Login to LMS</h2>
+
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center font-medium">{error}</div>}
 
         {step === 1 ? (
           <>
@@ -224,7 +260,10 @@ export default function Login() {
 
             <div className="flex justify-between items-center mt-4">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  setStep(1);
+                  setError("");
+                }}
                 className="text-gray-500 text-sm hover:underline"
               >
                 Back to Login

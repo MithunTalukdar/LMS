@@ -12,7 +12,9 @@ const userSchema = new mongoose.Schema({
   loginOtpExpire: Date,
   lastOtpVerification: Date,
   lastOtpResentAt: Date,
-  lastPasswordResetRequestAt: Date
+  lastPasswordResetRequestAt: Date,
+  otpAttempts: { type: Number, default: 0 },
+  lockUntil: Date
 });
 
 export default mongoose.model("User", userSchema);

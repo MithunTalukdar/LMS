@@ -77,7 +77,11 @@ router.post("/google/success", (req, res) => {
 
 // 🛠️ TEMPORARY DEBUG ROUTE: Visit /api/auth/check-env to see the value
 router.get("/check-env", (req, res) => {
-  res.json({ CLIENT_URL: process.env.CLIENT_URL || "Variable is not defined" });
+  res.json({ 
+    CLIENT_URL: process.env.CLIENT_URL || "Variable is not defined",
+    BREVO_OTP_TEMPLATE_ID: process.env.BREVO_OTP_TEMPLATE_ID || "MISSING",
+    BREVO_WELCOME_TEMPLATE_ID: process.env.BREVO_WELCOME_TEMPLATE_ID || "MISSING"
+  });
 });
 
 export default router;

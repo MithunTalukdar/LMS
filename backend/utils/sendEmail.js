@@ -14,8 +14,9 @@ const sendEmail = async (options) => {
       },
     };
 
-    const tid = parseInt(options.templateId);
-    if (options.templateId && !isNaN(tid)) {
+    // Ensure templateId is a valid number and not a string like "undefined"
+    const tid = Number(options.templateId);
+    if (options.templateId && !isNaN(tid) && tid > 0) {
       payload.templateId = tid;
       payload.params = options.params || {};
     } else {
@@ -30,6 +31,7 @@ const sendEmail = async (options) => {
       .set("Accept", "application/json")
       .send(payload);
 
+    console.log("✅ Brevo API Response:", response.body);
     return response.body;
   } catch (error) {
     const errorMessage = error.response?.body?.message || error.message;

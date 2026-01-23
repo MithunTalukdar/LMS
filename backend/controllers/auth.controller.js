@@ -98,8 +98,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if OTP verification is needed (skip if ever verified before)
-    if (user.lastOtpVerification) {
+    // Check if OTP verification is needed (skip if verified within last 7 days)
+    const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+    const isRecentlyVerified = user.isVerified && user.lastOtpVerification && (Date.now() - new Date(user.lastOtpVerification).getTime() < SEVEN_DAYS_IN_MS);
+
+    if (isRecentlyVerified) {
        const token = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET,
@@ -116,20 +119,46 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
+    }
+
+    // Rate limiting: 60 seconds cooldown between OTP sends
+    const now = Date.now();
+    const cooldown = 60 * 1000;
+    if (user.lastOtpResentAt && (now - new Date(user.lastOtpResentAt).getTime() < cooldown)) {
+      const secondsLeft = Math.ceil((cooldown - (now - new Date(user.lastOtpResentAt).getTime())) / 1000);
+      return res.status(429).json({ message: `Please wait ${secondsLeft} seconds before requesting another code.` });
+    }
+
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Save OTP to user
     user.loginOtp = otp;
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.lastOtpResentAt = now;
+    user.otpAttempts = 0; // Reset attempts for the new OTP session
     await user.save({ validateBeforeSave: false });
 
     // Send OTP via Email
     try {
       await sendEmail({
         email: lowerEmail,
-        subject: "Your Login Verification Code",
-        message: `<p>Your login verification code is: <strong style="font-size: 1.2em; color: #2563eb;">${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
+        subject: "CodeLMS Verification Code",
+        message: `
+          <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb; text-align: center;">Login Verification</h2>
+            <p>Hello,</p>
+            <p>To complete your login to CodeLMS, please use the following verification code:</p>
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb; margin: 30px 0; text-align: center; background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px dashed #cbd5e1;">${otp}</div>
+            <p>This code will expire in <strong>10 minutes</strong>. If you did not request this code, please secure your account.</p>
+            <hr style="border: none; border-top: 1px solid #eee;" />
+            <p style="font-size: 12px; color: #777; text-align: center;">CodeLMS Support Team</p>
+          </div>
+        `,
         templateId: process.env.BREVO_OTP_TEMPLATE_ID,
         params: { otp }
       });
@@ -163,20 +192,38 @@ export const verifyRegisterOtp = async (req, res) => {
     }
 
     const lowerEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ 
-      email: lowerEmail,
-      loginOtp: otp,
-      loginOtpExpire: { $gt: Date.now() }
-    });
+    const user = await User.findOne({ email: lowerEmail });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
+    }
+
+    // Validate OTP
+    if (user.loginOtp !== otp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
+      user.otpAttempts = (user.otpAttempts || 0) + 1;
+      if (user.otpAttempts >= 5) {
+        user.lockUntil = Date.now() + 30 * 60 * 1000; // Lock for 30 minutes
+      }
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({ 
+        message: user.otpAttempts >= 5 
+          ? "Too many failed attempts. Account locked for 30 minutes." 
+          : "Invalid or expired OTP" 
+      });
     }
 
     // Mark as verified and clear OTP
     user.isVerified = true;
     user.loginOtp = undefined;
     user.loginOtpExpire = undefined;
+    user.otpAttempts = 0;
+    user.lockUntil = undefined;
     user.lastOtpVerification = Date.now();
     await user.save({ validateBeforeSave: false });
 
@@ -212,6 +259,12 @@ export const resendRegistrationOtp = async (req, res) => {
 
     if (user.isVerified) {
       return res.status(400).json({ message: "Account is already verified. Please login." });
+    }
+
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
     }
 
     // Rate limiting: 60 seconds cooldown between resends
@@ -256,20 +309,38 @@ export const verifyLoginOtp = async (req, res) => {
     }
 
     const lowerEmail = email ? email.toLowerCase().trim() : "";
-    const user = await User.findOne({ 
-      email: lowerEmail,
-      loginOtp: otp,
-      loginOtpExpire: { $gt: Date.now() }
-    });
+    const user = await User.findOne({ email: lowerEmail });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
+    }
+
+    // Validate OTP
+    if (user.loginOtp !== otp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
+      user.otpAttempts = (user.otpAttempts || 0) + 1;
+      if (user.otpAttempts >= 5) {
+        user.lockUntil = Date.now() + 30 * 60 * 1000; // Lock for 30 minutes
+      }
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({ 
+        message: user.otpAttempts >= 5 
+          ? "Too many failed attempts. Account locked for 30 minutes." 
+          : "Invalid or expired OTP" 
+      });
     }
 
     // Clear OTP
     user.loginOtp = undefined;
     user.loginOtpExpire = undefined;
     user.isVerified = true;
+    user.otpAttempts = 0;
+    user.lockUntil = undefined;
     user.lastOtpVerification = Date.now();
     await user.save({ validateBeforeSave: false });
 
@@ -326,12 +397,27 @@ export const resendOtp = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remaining = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
+    }
+
+    // Rate limiting: 60 seconds cooldown
+    const now = Date.now();
+    const cooldown = 60 * 1000;
+    if (user.lastOtpResentAt && (now - new Date(user.lastOtpResentAt).getTime() < cooldown)) {
+      const secondsLeft = Math.ceil((cooldown - (now - new Date(user.lastOtpResentAt).getTime())) / 1000);
+      return res.status(429).json({ message: `Please wait ${secondsLeft} seconds before requesting another code.` });
+    }
+
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Save OTP to user
     user.loginOtp = otp;
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.lastOtpResentAt = now;
     await user.save({ validateBeforeSave: false });
 
     try {
