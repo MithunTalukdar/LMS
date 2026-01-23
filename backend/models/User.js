@@ -5,11 +5,14 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
   role: { type: String, enum: ["student", "teacher", "admin"], default: "student" },
+  isVerified: { type: Boolean, default: false },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   loginOtp: String,
   loginOtpExpire: Date,
-  lastOtpVerification: Date
+  lastOtpVerification: Date,
+  lastOtpResentAt: Date,
+  lastPasswordResetRequestAt: Date
 });
 
 export default mongoose.model("User", userSchema);

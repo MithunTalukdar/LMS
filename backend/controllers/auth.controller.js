@@ -28,29 +28,35 @@ export const register = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
     const user = await User.create({
       name,
       email: lowerEmail,
       password: hashed,
       role: role || "student",
-      lastOtpVerification: Date.now() // Auto-verify first login to skip OTP email
+      isVerified: false,
+      loginOtp: otp,
+      loginOtpExpire: Date.now() + 10 * 60 * 1000,
+      lastOtpResentAt: Date.now()
     });
 
     console.log("✅ User registered:", user.email);
 
-    // Send Welcome Email via Brevo
+    // Send Verification OTP via Brevo
     try {
       await sendEmail({
         email: lowerEmail,
-        templateId: process.env.BREVO_WELCOME_TEMPLATE_ID,
-        params: { name, loginUrl: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login` }
+        subject: "Verify Your Account",
+        message: `<p>Your account verification code is: <strong style="font-size: 1.2em; color: #2563eb;">${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
+        templateId: process.env.BREVO_OTP_TEMPLATE_ID,
+        params: { otp }
       });
     } catch (emailError) {
-      console.error("❌ Welcome Email Error:", emailError.message);
-      // Note: We don't fail the registration if the welcome email fails to send
+      console.error("❌ Registration OTP Email Error:", emailError.message);
     }
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "Verification code sent to your email", email: lowerEmail });
   } catch (err) {
     console.error("❌ Registration Error:", err);
     res.status(500).json({ message: "Registration failed" });
@@ -80,6 +86,11 @@ export const login = async (req, res) => {
     if (!user) {
       console.log("❌ Login failed: User not found for email:", lowerEmail);
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Check if user is verified
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your account first. Check your email for the OTP." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -123,6 +134,8 @@ export const login = async (req, res) => {
     try {
       await sendEmail({
         email: lowerEmail,
+        subject: "Your Login Verification Code",
+        message: `<p>Your login verification code is: <strong style="font-size: 1.2em; color: #2563eb;">${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
         templateId: process.env.BREVO_OTP_TEMPLATE_ID,
         params: { otp }
       });
@@ -144,6 +157,99 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error("❌ Login Error:", err);
     res.status(500).json({ message: "Login failed" });
+  }
+};
+
+export const verifyRegisterOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const lowerEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ 
+      email: lowerEmail,
+      loginOtp: otp,
+      loginOtpExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Mark as verified and clear OTP
+    user.isVerified = true;
+    user.loginOtp = undefined;
+    user.loginOtpExpire = undefined;
+    user.lastOtpVerification = Date.now();
+    await user.save({ validateBeforeSave: false });
+
+    // Send Welcome Email now that they are verified
+    try {
+      await sendEmail({
+        email: user.email,
+        templateId: process.env.BREVO_WELCOME_TEMPLATE_ID,
+        params: { name: user.name, loginUrl: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login` }
+      });
+    } catch (emailError) {
+      console.error("❌ Welcome Email Error:", emailError.message);
+    }
+
+    res.status(200).json({ success: true, message: "Account verified successfully. You can now login." });
+  } catch (err) {
+    console.error("❌ Verify Registration OTP Error:", err);
+    res.status(500).json({ message: "Verification failed" });
+  }
+};
+
+export const resendRegistrationOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const lowerEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: lowerEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Account is already verified. Please login." });
+    }
+
+    // Rate limiting: 60 seconds cooldown between resends
+    const now = Date.now();
+    const cooldown = 60 * 1000; // 60 seconds
+    if (user.lastOtpResentAt && (now - new Date(user.lastOtpResentAt).getTime() < cooldown)) {
+      const secondsLeft = Math.ceil((cooldown - (now - new Date(user.lastOtpResentAt).getTime())) / 1000);
+      return res.status(429).json({ message: `Please wait ${secondsLeft} seconds before requesting another code.` });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.loginOtp = otp;
+    user.loginOtpExpire = Date.now() + 10 * 60 * 1000;
+    user.lastOtpResentAt = now;
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      await sendEmail({
+        email: lowerEmail,
+        subject: "Verify Your Account",
+        message: `<p>Your account verification code is: <strong style="font-size: 1.2em; color: #2563eb;">${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
+        templateId: process.env.BREVO_OTP_TEMPLATE_ID,
+        params: { otp }
+      });
+      res.status(200).json({ message: "OTP resent successfully" });
+    } catch (emailError) {
+      console.error("❌ Resend Registration OTP Email Error:", emailError.message);
+      res.status(500).json({ message: "Failed to send email" });
+    }
+  } catch (err) {
+    console.error("❌ Resend Registration OTP Error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -236,6 +342,8 @@ export const resendOtp = async (req, res) => {
     try {
       await sendEmail({
         email: user.email,
+        subject: "Your Verification Code",
+        message: `<p>Your verification code is: <strong style="font-size: 1.2em; color: #2563eb;">${otp}</strong></p><p>This code expires in 10 minutes.</p>`,
         templateId: process.env.BREVO_OTP_TEMPLATE_ID,
         params: { otp }
       });
