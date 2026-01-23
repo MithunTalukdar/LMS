@@ -1,48 +1,38 @@
-import SibApiV3Sdk from "sib-api-v3-sdk";
-
-// Initialize Brevo API client (Singleton – production safe)
-const client = SibApiV3Sdk.ApiClient.instance;
-const apiKeyAuth = client.authentications["api-key"];
-
-if (!process.env.BREVO_API_KEY) {
-  throw new Error("❌ BREVO_API_KEY is missing in environment variables");
-}
-
-apiKeyAuth.apiKey = process.env.BREVO_API_KEY;
-
-const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+import request from "superagent";
 
 /**
- * sendEmail
- * @param {Object} options
- * @param {string} options.email - recipient email
- * @param {string} options.subject - email subject
- * @param {string} options.message - plain text or HTML
+ * Sends an email using the Brevo API.
+ * @param {Object} options - { email, subject, message, templateId, params }
  */
-const sendEmail = async ({ email, subject, message }) => {
-  if (!email || !subject || !message) {
-    throw new Error("❌ sendEmail: Missing required fields");
-  }
-
-  if (!process.env.EMAIL_FROM) {
-    throw new Error("❌ EMAIL_FROM is missing in environment variables");
-  }
-
+const sendEmail = async (options) => {
   try {
-    await tranEmailApi.sendTransacEmail({
+    const payload = {
+      to: [{ email: options.email }],
       sender: {
-        name: process.env.FROM_NAME || "LMS Support",
+        name: process.env.FROM_NAME,
         email: process.env.EMAIL_FROM,
       },
-      to: [{ email }],
-      subject,
-      htmlContent: message,
-    });
+    };
 
-    console.log("✅ Email sent successfully via Brevo");
+    if (options.templateId) {
+      payload.templateId = parseInt(options.templateId);
+      payload.params = options.params || {};
+    } else {
+      payload.subject = options.subject;
+      payload.htmlContent = options.message;
+    }
+
+    const response = await request
+      .post("https://api.brevo.com/v3/smtp/email")
+      .set("api-key", process.env.BREVO_API_KEY)
+      .set("Content-Type", "application/json")
+      .set("Accept", "application/json")
+      .send(payload);
+
+    return response.body;
   } catch (error) {
-    console.error("❌ Brevo Email Error:", error?.response?.text || error.message);
-    throw new Error("Email service failed");
+    const errorMessage = error.response?.body?.message || error.message;
+    throw new Error(`Brevo API Error: ${errorMessage}`);
   }
 };
 

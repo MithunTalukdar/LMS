@@ -37,6 +37,19 @@ export const register = async (req, res) => {
     });
 
     console.log("✅ User registered:", user.email);
+
+    // Send Welcome Email via Brevo
+    try {
+      await sendEmail({
+        email: lowerEmail,
+        templateId: process.env.BREVO_WELCOME_TEMPLATE_ID,
+        params: { name, loginUrl: `${process.env.CLIENT_URL || 'http://localhost:5173'}/login` }
+      });
+    } catch (emailError) {
+      console.error("❌ Welcome Email Error:", emailError.message);
+      // Note: We don't fail the registration if the welcome email fails to send
+    }
+
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
     console.error("❌ Registration Error:", err);
@@ -110,8 +123,8 @@ export const login = async (req, res) => {
     try {
       await sendEmail({
         email: lowerEmail,
-        subject: "Login Verification Code",
-        message: `Your login verification code is: ${otp}\n\nThis code expires in 10 minutes.`
+        templateId: process.env.BREVO_OTP_TEMPLATE_ID,
+        params: { otp }
       });
 
       console.log(`📧 OTP sent to ${lowerEmail}`);
@@ -122,10 +135,10 @@ export const login = async (req, res) => {
         email: user.email
       });
     } catch (emailError) {
-      console.error("❌ SMTP Error:", emailError.code === 'ETIMEDOUT' ? "Connection Timeout" : emailError.message);
+      console.error("❌ Email Service Error:", emailError.message);
       return res.status(500).json({ 
-        message: "Email service timed out. Please try again in a moment.", 
-        error: emailError.code 
+        message: "Failed to send verification email. Please try again later.", 
+        error: emailError.message 
       });
     }
   } catch (err) {
@@ -224,8 +237,8 @@ export const resendOtp = async (req, res) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: "Verification Code",
-        message: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`
+        templateId: process.env.BREVO_OTP_TEMPLATE_ID,
+        params: { otp }
       });
 
       res.status(200).json({ message: "Verification code sent" });
