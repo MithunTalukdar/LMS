@@ -14,8 +14,9 @@ const sendEmail = async (options) => {
       },
     };
 
-    if (options.templateId) {
-      payload.templateId = parseInt(options.templateId);
+    const tid = parseInt(options.templateId);
+    if (options.templateId && !isNaN(tid)) {
+      payload.templateId = tid;
       payload.params = options.params || {};
     } else {
       payload.subject = options.subject;

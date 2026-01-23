@@ -88,11 +88,6 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if user is verified
-    if (!user.isVerified) {
-      return res.status(403).json({ message: "Please verify your account first. Check your email for the OTP." });
-    }
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       console.log("❌ Login failed: Password mismatch for user:", user.email);
@@ -103,9 +98,8 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if OTP verification is needed (skip if verified within last 7 days)
-    const sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000;
-    if (user.lastOtpVerification && (Date.now() - new Date(user.lastOtpVerification).getTime() < sevenDaysInMillis)) {
+    // Check if OTP verification is needed (skip if ever verified before)
+    if (user.lastOtpVerification) {
        const token = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET,
@@ -275,6 +269,7 @@ export const verifyLoginOtp = async (req, res) => {
     // Clear OTP
     user.loginOtp = undefined;
     user.loginOtpExpire = undefined;
+    user.isVerified = true;
     user.lastOtpVerification = Date.now();
     await user.save({ validateBeforeSave: false });
 
