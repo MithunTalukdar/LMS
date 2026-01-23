@@ -6,33 +6,30 @@ import bcrypt from "bcryptjs";
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  if (!email || typeof email !== 'string') {
+  if (!email || typeof email !== "string") {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  // Normalize email to match auth controller logic
   const lowerEmail = email.toLowerCase().trim();
   let user = await User.findOne({ email: lowerEmail });
 
   if (!user) {
-    // Try case-insensitive regex for legacy data
-    user = await User.findOne({ email: { $regex: new RegExp(`^${lowerEmail}$`, 'i') } });
+    user = await User.findOne({
+      email: { $regex: new RegExp(`^${lowerEmail}$`, "i") },
+    });
   }
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Get reset token
   const resetToken = crypto.randomBytes(20).toString("hex");
 
-  // Hash token and set to resetPasswordToken field
   user.resetPasswordToken = crypto
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
-  // Set expire (10 minutes)
   user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
   try {
@@ -42,36 +39,35 @@ export const forgotPassword = async (req, res) => {
     return res.status(500).json({ message: "Database error" });
   }
 
-  // Create reset url
   const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
   const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-  const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
+  const message = `
+    <p>You requested a password reset.</p>
+    <p>Click the link below to reset your password:</p>
+    <a href="${resetUrl}">${resetUrl}</a>
+    <p>This link expires in 10 minutes.</p>
+  `;
 
   try {
+    console.log("📧 Sending password reset email...");
     await sendEmail({
       email: user.email,
-      subject: "Password Reset Token",
+      subject: "Reset Your Password",
       message,
     });
 
-    res.status(200).json({ success: true, data: "Email sent" });
+    res.status(200).json({ success: true, message: "Email sent" });
   } catch (err) {
-    console.error("❌ Forgot Password Email FAILED:", err.code === 'ETIMEDOUT' ? "Connection Timeout" : err.message);
-    if (err.response) console.error("📝 SMTP Response:", err.response);
-    
-    // Rollback token if email fails to prevent "ghost" reset requests
+    console.error("❌ Forgot Password Email FAILED:", err.message);
+
+    // rollback token
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    try {
-      await user.save({ validateBeforeSave: false });
-    } catch (saveErr) {
-      console.error("⚠️ Failed to clear reset token:", saveErr.message);
-    }
+    await user.save({ validateBeforeSave: false });
 
-    return res.status(500).json({ 
-      message: "Email service timed out. Please check your connection or try again later.", 
-      error: err.code 
+    res.status(500).json({
+      message: "Email service unavailable. Please try again later.",
     });
   }
 };
@@ -88,21 +84,18 @@ export const resetPassword = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    return res.status(400).json({ message: "Invalid or expired token" });
   }
 
   if (!req.body.password) {
     return res.status(400).json({ message: "Password is required" });
   }
 
-  // Hash new password
-  const salt = await bcrypt.genSalt(10);
-  user.password = await bcrypt.hash(req.body.password, salt);
-
+  user.password = await bcrypt.hash(req.body.password, 10);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
 
   await user.save({ validateBeforeSave: false });
 
-  res.status(200).json({ success: true, data: "Password updated successfully" });
+  res.status(200).json({ success: true, message: "Password updated successfully" });
 };
