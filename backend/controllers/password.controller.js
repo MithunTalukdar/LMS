@@ -49,6 +49,8 @@ export const forgotPassword = async (req, res) => {
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
 
   try {
+    console.log("📧 Sending Password Reset Email...");
+    console.log(`Attempting connection to ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
     await sendEmail({
       email: user.email,
       subject: "Password Reset Token",
@@ -57,12 +59,12 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({ success: true, data: "Email sent" });
   } catch (err) {
-    console.error("❌ Forgot Password Email FAILED:", err);
+    console.error("❌ Forgot Password Email FAILED:", err.code === 'ETIMEDOUT' ? "Connection Timeout" : err.message);
     if (err.response) console.error("📝 SMTP Response:", err.response);
     
+    // Rollback token if email fails to prevent "ghost" reset requests
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-
     try {
       await user.save({ validateBeforeSave: false });
     } catch (saveErr) {
@@ -70,8 +72,8 @@ export const forgotPassword = async (req, res) => {
     }
 
     return res.status(500).json({ 
-      message: "Email could not be sent", 
-      error: err.message 
+      message: "Email service timed out. Please check your connection or try again later.", 
+      error: err.code 
     });
   }
 };

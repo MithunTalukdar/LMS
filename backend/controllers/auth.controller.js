@@ -108,6 +108,8 @@ export const login = async (req, res) => {
 
     // Send OTP via Email
     try {
+      console.log("📧 Sending OTP Email...");
+      console.log(`Attempting connection to ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
       await sendEmail({
         email: lowerEmail,
         subject: "Login Verification Code",
@@ -122,10 +124,10 @@ export const login = async (req, res) => {
         email: user.email
       });
     } catch (emailError) {
-      console.error("❌ SMTP Error in Production:", emailError.message || emailError);
+      console.error("❌ SMTP Error:", emailError.code === 'ETIMEDOUT' ? "Connection Timeout" : emailError.message);
       return res.status(500).json({ 
-        message: "Email service unavailable. Check server logs.", 
-        error: emailError.message 
+        message: "Email service timed out. Please try again in a moment.", 
+        error: emailError.code 
       });
     }
   } catch (err) {

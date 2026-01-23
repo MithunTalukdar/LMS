@@ -16,6 +16,12 @@ const sendEmail = async (options) => {
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
       },
+      // Production fixes for Render timeouts
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      dnsTimeout: 10000,
+      family: 4, // Force IPv4 to avoid resolution issues common on Render
     });
   } else {
     // Option 2: Use Generic SMTP (Host/Port)
@@ -27,6 +33,12 @@ const sendEmail = async (options) => {
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
       },
+      // Production fixes for Render timeouts
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      dnsTimeout: 10000,
+      family: 4, // Force IPv4 to avoid resolution issues common on Render
       tls: {
         rejectUnauthorized: false,
       },
@@ -43,7 +55,27 @@ const sendEmail = async (options) => {
     text: options.message,
   };
 
-  await transporter.sendMail(message);
+  const MAX_RETRIES = 3;
+  for (let i = 1; i <= MAX_RETRIES; i++) {
+    try {
+      await transporter.sendMail(message);
+      console.log(`✅ Email sent successfully on attempt ${i}`);
+      return; // Exit function on success
+    } catch (error) {
+      const isLastAttempt = i === MAX_RETRIES;
+      console.warn(`⚠️ Email attempt ${i} failed: ${error.code || error.message}`);
+      
+      if (isLastAttempt) {
+        console.error(`❌ All ${MAX_RETRIES} email attempts failed.`);
+        throw error; // Re-throw the error so the controller can handle it
+      }
+
+      // Wait before retrying: 2s, 4s, etc. (Exponential Backoff)
+      const delay = i * 2000;
+      console.log(`🔄 Retrying in ${delay / 1000}s...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
 };
 
 export default sendEmail;
