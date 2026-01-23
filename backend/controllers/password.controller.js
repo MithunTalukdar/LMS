@@ -42,19 +42,22 @@ export const forgotPassword = async (req, res) => {
   const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
   const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
+  const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click the link below to reset your password:\n\n${resetUrl}`;
+
   try {
     console.log("📧 Sending password reset email...");
     await sendEmail({
       email: user.email,
-      templateId: process.env.BREVO_RESET_PASSWORD_TEMPLATE_ID,
-      params: { resetUrl, name: user.name }
+      subject: "Password Reset Token",
+      message,
     });
 
     res.status(200).json({ success: true, message: "Email sent" });
   } catch (err) {
-    console.error("❌ Brevo Email Service Error:", err.message);
-
-    // rollback token
+    console.error("❌ Forgot Password Email FAILED:", err.code === 'ETIMEDOUT' ? "Connection Timeout" : err.message);
+    if (err.response) console.error("📝 SMTP Response:", err.response);
+    
+    // Rollback token if email fails to prevent "ghost" reset requests
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save({ validateBeforeSave: false });

@@ -233,7 +233,6 @@ export const resendOtp = async (req, res) => {
     user.loginOtpExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false });
 
-    // Send OTP via Email
     try {
       await sendEmail({
         email: user.email,
@@ -241,9 +240,9 @@ export const resendOtp = async (req, res) => {
         params: { otp }
       });
 
-      res.status(200).json({ message: "Verification code sent" });
+      return res.status(200).json({ message: "Verification code sent" });
     } catch (emailError) {
-      console.error("❌ Resend OTP Email Error:", emailError.message || emailError);
+      console.error("❌ Resend OTP Email Error:", emailError.message);
       return res.status(500).json({ message: "Email service unavailable" });
     }
   } catch (err) {
