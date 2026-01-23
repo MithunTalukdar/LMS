@@ -221,18 +221,24 @@ export const resendOtp = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Send OTP via Email
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: "Verification Code",
-        message: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`
-      });
+    // Send OTP via Email (Brevo)
+try {
+  await sendEmail({
+    email: user.email,
+    subject: "Verification Code",
+    message: `
+      <p>Your verification code is:</p>
+      <h2>${otp}</h2>
+      <p>This code expires in 10 minutes.</p>
+    `,
+  });
 
-      res.status(200).json({ message: "Verification code sent" });
-    } catch (emailError) {
-      console.error("❌ Resend OTP Email Error:", emailError.message || emailError);
-      return res.status(500).json({ message: "Email service unavailable" });
-    }
+  return res.status(200).json({ message: "Verification code sent" });
+} catch (emailError) {
+  console.error("❌ Resend OTP Email Error:", emailError.message);
+  return res.status(500).json({ message: "Email service unavailable" });
+}
+
   } catch (err) {
     console.error("❌ Resend OTP Error:", err);
     res.status(500).json({ message: "Failed to resend OTP" });
