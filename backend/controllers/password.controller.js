@@ -50,7 +50,7 @@ export const forgotPassword = async (req, res) => {
 
   try {
     console.log("📧 Sending Password Reset Email...");
-    console.log(`Attempting connection to ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}`);
+    console.log(`Attempting connection via ${process.env.SMTP_SERVICE || process.env.SMTP_HOST || 'SMTP'}`);
     await sendEmail({
       email: user.email,
       subject: "Password Reset Token",

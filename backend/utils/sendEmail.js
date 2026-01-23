@@ -1,80 +1,48 @@
-import nodemailer from "nodemailer";
+import SibApiV3Sdk from "sib-api-v3-sdk";
 
-const sendEmail = async (options) => {
-  let transporter;
+// Initialize Brevo API client (Singleton – production safe)
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKeyAuth = client.authentications["api-key"];
 
-  // Check if credentials exist
-  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-    console.error("❌ SMTP Error: SMTP_EMAIL or SMTP_PASSWORD is missing in environment variables.");
+if (!process.env.BREVO_API_KEY) {
+  throw new Error("❌ BREVO_API_KEY is missing in environment variables");
+}
+
+apiKeyAuth.apiKey = process.env.BREVO_API_KEY;
+
+const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+/**
+ * sendEmail
+ * @param {Object} options
+ * @param {string} options.email - recipient email
+ * @param {string} options.subject - email subject
+ * @param {string} options.message - plain text or HTML
+ */
+const sendEmail = async ({ email, subject, message }) => {
+  if (!email || !subject || !message) {
+    throw new Error("❌ sendEmail: Missing required fields");
   }
 
-  // Option 1: Use a Service (SendGrid, Mailgun, Gmail) if SMTP_SERVICE is set
-  if (process.env.SMTP_SERVICE) {
-    transporter = nodemailer.createTransport({
-      service: process.env.SMTP_SERVICE,
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      // Production fixes for Render timeouts
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-      dnsTimeout: 10000,
-      family: 4, // Force IPv4 to avoid resolution issues common on Render
-    });
-  } else {
-    // Option 2: Use Generic SMTP (Host/Port)
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_PORT == "465",
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
-      },
-      // Production fixes for Render timeouts
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-      dnsTimeout: 10000,
-      family: 4, // Force IPv4 to avoid resolution issues common on Render
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+  if (!process.env.EMAIL_FROM) {
+    throw new Error("❌ EMAIL_FROM is missing in environment variables");
   }
 
-  // Prevent using 'apikey' as the email address (common with SendGrid)
-  const fromEmail = process.env.FROM_EMAIL || (process.env.SMTP_EMAIL && process.env.SMTP_EMAIL.includes("@") ? process.env.SMTP_EMAIL : "noreply@example.com");
+  try {
+    await tranEmailApi.sendTransacEmail({
+      sender: {
+        name: process.env.FROM_NAME || "LMS Support",
+        email: process.env.EMAIL_FROM,
+      },
+      to: [{ email }],
+      subject,
+      htmlContent: message,
+    });
 
-  const message = {
-    from: `${process.env.FROM_NAME || "LMS Support"} <${fromEmail}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-  };
-
-  const MAX_RETRIES = 3;
-  for (let i = 1; i <= MAX_RETRIES; i++) {
-    try {
-      await transporter.sendMail(message);
-      console.log(`✅ Email sent successfully on attempt ${i}`);
-      return; // Exit function on success
-    } catch (error) {
-      const isLastAttempt = i === MAX_RETRIES;
-      console.warn(`⚠️ Email attempt ${i} failed: ${error.code || error.message}`);
-      
-      if (isLastAttempt) {
-        console.error(`❌ All ${MAX_RETRIES} email attempts failed.`);
-        throw error; // Re-throw the error so the controller can handle it
-      }
-
-      // Wait before retrying: 2s, 4s, etc. (Exponential Backoff)
-      const delay = i * 2000;
-      console.log(`🔄 Retrying in ${delay / 1000}s...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+    console.log("✅ Email sent successfully via Brevo");
+  } catch (error) {
+    console.error("❌ Brevo Email Error:", error?.response?.text || error.message);
+    throw new Error("Email service failed");
   }
 };
 

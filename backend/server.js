@@ -10,6 +10,7 @@ import progressRoutes from "./routes/progress.routes.js";
 import quizRoutes from "./routes/quiz.routes.js";
 import seedCourses from "./utils/seedCourses.js";
 import certificateRoutes from "./routes/certificate.routes.js";
+import { verifyConnection } from "./utils/sendEmail.js";
 import userRoutes from "./routes/user.routes.js";
 
 import adminRoutes from "./routes/admin.routes.js";
@@ -49,11 +50,19 @@ mongoose.connect(process.env.MONGO_URI)
     console.log("------------------------------------------------");
     console.log("🚀 Server Startup Checks (Render Mode):");
     console.log(`✅ CLIENT_URL: ${process.env.CLIENT_URL || "NOT SET (Using default)"}`);
+    console.log(`✅ SMTP_SERVICE: ${process.env.SMTP_SERVICE || "NOT SET"}`);
     console.log(`✅ SMTP_HOST: ${process.env.SMTP_HOST || "MISSING ❌"}`);
     console.log(`✅ SMTP_PORT: ${process.env.SMTP_PORT || "MISSING ❌"}`);
     console.log(`✅ SMTP_EMAIL: ${process.env.SMTP_EMAIL || "MISSING ❌"}`);
     console.log(`✅ SMTP_PASSWORD: ${process.env.SMTP_PASSWORD ? "SET (Hidden)" : "MISSING ❌"}`);
     console.log("------------------------------------------------");
+
+    // Verify SMTP connection on startup to catch production issues early
+    try {
+      await verifyConnection();
+    } catch (emailError) {
+      console.error("⚠️ Email service verification failed. Check your SMTP credentials and network settings.");
+    }
 
     await seedCourses();   // 🔥 AUTO ADD COURSES
     
