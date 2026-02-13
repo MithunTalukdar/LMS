@@ -13,26 +13,23 @@ const pendingLogins = new Map(); // Store temporary login codes
 const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");
 const isLocalhostUrl = (value) =>
   typeof value === "string" && /localhost|127\.0\.0\.1/i.test(value);
+const isHostedRuntime = () =>
+  Boolean(process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL);
 
 const getClientUrl = () => {
   if (process.env.CLIENT_URL) return process.env.CLIENT_URL;
-  if (process.env.NODE_ENV === "production") return null;
+  if (isHostedRuntime()) return null;
   return "http://localhost:5173";
 };
 
 const getBackendBaseUrl = (req) => {
-  if (process.env.NODE_ENV === "production") {
-    if (process.env.BACKEND_URL) return trimTrailingSlash(process.env.BACKEND_URL);
-    return "https://lms-mpjz.onrender.com";
+  if (process.env.BACKEND_URL) return trimTrailingSlash(process.env.BACKEND_URL);
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return trimTrailingSlash(process.env.RENDER_EXTERNAL_URL);
   }
 
-  if (process.env.BACKEND_URL) return trimTrailingSlash(process.env.BACKEND_URL);
-
   const callbackEnv = process.env.GOOGLE_CALLBACK_URL;
-  if (
-    callbackEnv &&
-    !(process.env.NODE_ENV === "production" && isLocalhostUrl(callbackEnv))
-  ) {
+  if (callbackEnv && !isLocalhostUrl(callbackEnv)) {
     try {
       return trimTrailingSlash(new URL(callbackEnv).origin);
     } catch {
@@ -133,6 +130,7 @@ router.get("/check-env", (req, res) => {
   res.json({ 
     CLIENT_URL: process.env.CLIENT_URL || "Variable is not defined",
     BACKEND_URL: process.env.BACKEND_URL || "Variable is not defined",
+    RENDER_EXTERNAL_URL: process.env.RENDER_EXTERNAL_URL || "Variable is not defined",
     GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || "Variable is not defined",
     EFFECTIVE_GOOGLE_CALLBACK_URL: getGoogleCallbackUrl(req),
     BREVO_OTP_TEMPLATE_ID: process.env.BREVO_OTP_TEMPLATE_ID || "MISSING",

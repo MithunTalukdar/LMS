@@ -8,9 +8,10 @@ dotenv.config();
 
 const isLocalhostUrl = (value) =>
   typeof value === "string" && /localhost|127\.0\.0\.1/i.test(value);
+const isHostedRuntime = Boolean(process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL);
 
 const callbackURL =
-  process.env.NODE_ENV === "production" && isLocalhostUrl(process.env.GOOGLE_CALLBACK_URL)
+  isHostedRuntime && isLocalhostUrl(process.env.GOOGLE_CALLBACK_URL)
     ? "/api/auth/google/callback"
     : process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback";
 
