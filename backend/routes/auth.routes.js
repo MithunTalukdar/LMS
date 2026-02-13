@@ -10,6 +10,12 @@ import "../config/passport.js"; // ✅ Import passport config to register the st
 const router = express.Router();
 const pendingLogins = new Map(); // Store temporary login codes
 
+const getClientUrl = () => {
+  if (process.env.CLIENT_URL) return process.env.CLIENT_URL;
+  if (process.env.NODE_ENV === "production") return null;
+  return "http://localhost:5173";
+};
+
 router.post("/register", register);
 router.post("/login", login);
 router.get("/me", protect(), getMe);
@@ -27,7 +33,10 @@ router.get("/google", passport.authenticate("google", { scope: ["profile", "emai
 router.get(
   "/google/callback",
   (req, res, next) => {
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = getClientUrl();
+    if (!clientUrl) {
+      return res.status(500).send("CLIENT_URL is not configured on the server.");
+    }
     
     // Use a custom callback to debug why authentication fails
     passport.authenticate("google", { session: false }, (err, user, info) => {
@@ -59,7 +68,10 @@ router.get(
     setTimeout(() => pendingLogins.delete(code), 60000);
 
     // Redirect to the frontend callback page with the token
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = getClientUrl();
+    if (!clientUrl) {
+      return res.status(500).send("CLIENT_URL is not configured on the server.");
+    }
     res.redirect(`${clientUrl}/google/callback?code=${code}`);
   }
 );

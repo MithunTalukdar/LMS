@@ -11,7 +11,12 @@ export default function Navbar() {
   const [notificationCount, setNotificationCount] = useState(0);
 
   // Normalize API_URL to prevent double /api/api issues
-  const BASE_API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/api\/?$/, "");
+  const BASE_API_URL = (
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV
+      ? "http://localhost:5000/api"
+      : "https://lms-mpjz.onrender.com/api")
+  ).replace(/\/api\/?$/, "");
 
   useEffect(() => {
     if (user?.role === "student") {

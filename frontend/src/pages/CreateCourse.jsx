@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../utils/axios";
 
 const CreateCourse = () => {
   const [title, setTitle] = useState("");
@@ -10,18 +10,14 @@ const CreateCourse = () => {
     e.preventDefault();
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/courses",
+      await api.post(
+        "/courses",
         {
           title,
           description,
           instructor: user._id,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
 
       alert("Course created successfully");

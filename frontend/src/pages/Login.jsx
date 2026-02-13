@@ -22,7 +22,12 @@ export default function Login() {
   const [soundUrl, setSoundUrl] = useState("");
 
   // Normalize API_URL to prevent double /api/api issues
-  const BASE_API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/api\/?$/, "");
+  const BASE_API_URL = (
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV
+      ? "http://localhost:5000/api"
+      : "https://lms-mpjz.onrender.com/api")
+  ).replace(/\/api\/?$/, "");
 
   useEffect(() => {
     let interval;
