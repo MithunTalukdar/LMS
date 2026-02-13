@@ -21,6 +21,11 @@ const getClientUrl = () => {
 };
 
 const getBackendBaseUrl = (req) => {
+  if (process.env.NODE_ENV === "production") {
+    if (process.env.BACKEND_URL) return trimTrailingSlash(process.env.BACKEND_URL);
+    return "https://lms-mpjz.onrender.com";
+  }
+
   if (process.env.BACKEND_URL) return trimTrailingSlash(process.env.BACKEND_URL);
 
   const callbackEnv = process.env.GOOGLE_CALLBACK_URL;
