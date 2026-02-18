@@ -1,8 +1,22 @@
-import { useContext, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/axios";
 import LiveLink from "./LiveLink";
+
+const desktopLinkClass = ({ isActive }) =>
+  `rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
+    isActive
+      ? "border-sky-200 bg-sky-100/80 text-sky-900"
+      : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-white/80 hover:text-slate-900"
+  }`;
+
+const mobileLinkClass = ({ isActive }) =>
+  `block rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+    isActive
+      ? "border-sky-200 bg-sky-100/80 text-sky-900"
+      : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+  }`;
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -10,22 +24,24 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Normalize API_URL to prevent double /api/api issues
   const BASE_API_URL = (
     import.meta.env.VITE_API_URL ||
-    (import.meta.env.DEV
-      ? "http://localhost:5000/api"
-      : "https://lms-mpjz.onrender.com/api")
+    (import.meta.env.DEV ? "http://localhost:5000/api" : "https://lms-mpjz.onrender.com/api")
   ).replace(/\/api\/?$/, "");
+
   const GOOGLE_AUTH_URL =
     import.meta.env.VITE_GOOGLE_AUTH_URL || `${BASE_API_URL}/api/auth/google`;
 
   useEffect(() => {
     if (user?.role === "student") {
-      api.get("/tasks/notifications")
-        .then(res => setNotificationCount(res.data.count))
-        .catch(err => console.error("Failed to fetch notifications"));
+      api
+        .get("/tasks/notifications")
+        .then((res) => setNotificationCount(res.data.count))
+        .catch(() => setNotificationCount(0));
+      return;
     }
+
+    setNotificationCount(0);
   }, [user]);
 
   const handleLogout = () => {
@@ -37,8 +53,9 @@ export default function Navbar() {
   const handleGoogleLogin = (e) => {
     e.preventDefault();
     setIsOpen(false);
+
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
-    audio.play().catch(err => console.warn(err));
+    audio.play().catch(() => {});
 
     setTimeout(() => {
       window.location.href = GOOGLE_AUTH_URL;
@@ -46,70 +63,111 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="px-6 py-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-          <span>📚</span> LMS
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/75 backdrop-blur-xl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500" />
+
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <Link to="/" className="group inline-flex items-center gap-3">
+          <span className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 shadow-[0_14px_24px_-12px_rgba(37,99,235,0.75)]">
+            <span className="absolute left-2 top-2 h-2.5 w-2.5 rounded bg-white/95" />
+            <span className="absolute right-2 bottom-2 h-2.5 w-2.5 rounded bg-cyan-200/95" />
+            <span className="h-4 w-4 rounded-sm border border-white/70 bg-white/20" />
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-3xl font-extrabold tracking-tight text-slate-900">LMS</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Learn Build Grow
+            </span>
+          </span>
         </Link>
-        
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-gray-600 hover:text-blue-600 font-medium transition">Home</Link>
-          <Link to="/courses" className="text-gray-600 hover:text-blue-600 font-medium transition">Courses</Link>
-          
+
+        <div className="hidden items-center gap-2 md:flex">
+          <NavLink to="/" end className={desktopLinkClass}>
+            Home
+          </NavLink>
+          <NavLink to="/courses" className={desktopLinkClass}>
+            Courses
+          </NavLink>
+
           {user ? (
-            <div className="flex items-center gap-4">
-              {user.role === 'student' ? (
+            <>
+              {user.role === "student" ? (
                 <>
-                  <Link to="/dashboard/courses" className="text-gray-600 hover:text-blue-600 font-medium transition relative">
-                    My Courses
-                    {notificationCount > 0 && (
-                      <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                        {notificationCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link to="/dashboard/progress" className="text-gray-600 hover:text-blue-600 font-medium transition">Progress</Link>
-                  <Link to="/dashboard/certificates" className="text-gray-600 hover:text-blue-600 font-medium transition">Certificates</Link>
-                  <Link to="/dashboard/profile" className="text-gray-600 hover:text-blue-600 font-medium transition">Profile</Link>
+                  <NavLink to="/dashboard/courses" className={desktopLinkClass}>
+                    <span className="relative inline-flex items-center">
+                      My Courses
+                      {notificationCount > 0 && (
+                        <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {notificationCount}
+                        </span>
+                      )}
+                    </span>
+                  </NavLink>
+                  <NavLink to="/dashboard/progress" className={desktopLinkClass}>
+                    Progress
+                  </NavLink>
+                  <NavLink to="/dashboard/certificates" className={desktopLinkClass}>
+                    Certificates
+                  </NavLink>
+                  <NavLink to="/dashboard/profile" className={desktopLinkClass}>
+                    Profile
+                  </NavLink>
                 </>
               ) : (
-                <Link to={user.role === 'admin' ? "/dashboard/admin" : "/dashboard/teacher"} className="text-gray-600 hover:text-blue-600 font-medium transition">
+                <NavLink
+                  to={user.role === "admin" ? "/dashboard/admin" : "/dashboard/teacher"}
+                  className={desktopLinkClass}
+                >
                   Dashboard
-                </Link>
+                </NavLink>
               )}
-              <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
-                  <span className="text-sm font-semibold text-gray-700">{user.name}</span>
-                  <button 
-                    onClick={handleLogout}
-                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition text-sm font-medium"
-                  >
-                    Logout
-                  </button>
+
+              <div className="ml-2 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/80 p-1.5 shadow-sm">
+                <span className="rounded-xl bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                  {user.name}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_20px_-12px_rgba(220,38,38,0.85)] transition hover:-translate-y-0.5 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                >
+                  Logout
+                </button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-3">
-              <LiveLink href="/login" className="text-gray-600 hover:text-blue-600 font-medium transition" message="Logging In...">
+            <div className="ml-2 flex items-center gap-2">
+              <LiveLink
+                href="/login"
+                className="rounded-xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                message="Logging In..."
+              >
                 Login
               </LiveLink>
-              <LiveLink href="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" message="Creating Account...">
+              <LiveLink
+                href="/register"
+                className="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_22px_-12px_rgba(37,99,235,0.85)] transition hover:-translate-y-0.5 hover:from-sky-700 hover:to-indigo-700"
+                message="Creating Account..."
+              >
                 Register
               </LiveLink>
-              <a href={GOOGLE_AUTH_URL} onClick={handleGoogleLogin} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center gap-2">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              <a
+                href={GOOGLE_AUTH_URL}
+                onClick={handleGoogleLogin}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/85 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
                 <span>Google</span>
               </a>
             </div>
           )}
         </div>
 
-        {/* Hamburger Button */}
-        <button 
-          className="md:hidden text-gray-600 focus:outline-none"
-          onClick={() => setIsOpen(!isOpen)}
+        <button
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/80 text-slate-700 transition hover:bg-white md:hidden"
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label="Toggle menu"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             ) : (
@@ -117,61 +175,97 @@ export default function Navbar() {
             )}
           </svg>
         </button>
-      </div>
+      </nav>
 
-      {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg">
-          <Link to="/" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Home</Link>
-          <Link to="/courses" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Courses</Link>
-          
-          {user ? (
-            <>
-              {user.role === 'student' ? (
-                <>
-                  <Link to="/dashboard/courses" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>
-                    My Courses
-                    {notificationCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-2">
-                        {notificationCount}
+        <div className="border-t border-slate-200/80 bg-white/90 px-4 pb-4 pt-3 backdrop-blur-xl md:hidden">
+          <div className="space-y-2">
+            <NavLink to="/" end className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+              Home
+            </NavLink>
+            <NavLink to="/courses" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+              Courses
+            </NavLink>
+
+            {user ? (
+              <>
+                {user.role === "student" ? (
+                  <>
+                    <NavLink to="/dashboard/courses" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+                      <span className="inline-flex items-center">
+                        My Courses
+                        {notificationCount > 0 && (
+                          <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            {notificationCount}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </Link>
-                  <Link to="/dashboard/progress" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Progress</Link>
-                  <Link to="/dashboard/certificates" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Certificates</Link>
-                  <Link to="/dashboard/profile" className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>Profile</Link>
-                </>
-              ) : (
-                <Link to={user.role === 'admin' ? "/dashboard/admin" : "/dashboard/teacher"} className="block text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)}>
-                  Dashboard
-                </Link>
-              )}
-              <div className="pt-4 border-t border-gray-100">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Signed in as {user.name}</p>
-                  <button 
+                    </NavLink>
+                    <NavLink to="/dashboard/progress" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+                      Progress
+                    </NavLink>
+                    <NavLink
+                      to="/dashboard/certificates"
+                      className={mobileLinkClass}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Certificates
+                    </NavLink>
+                    <NavLink to="/dashboard/profile" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+                      Profile
+                    </NavLink>
+                  </>
+                ) : (
+                  <NavLink
+                    to={user.role === "admin" ? "/dashboard/admin" : "/dashboard/teacher"}
+                    className={mobileLinkClass}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dashboard
+                  </NavLink>
+                )}
+
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-sm font-semibold text-slate-700">{user.name}</p>
+                  <button
                     onClick={handleLogout}
-                    className="w-full text-left bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+                    className="mt-2 w-full rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                   >
                     Logout
                   </button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-3 grid gap-2">
+                <LiveLink
+                  href="/login"
+                  className="block rounded-xl border border-slate-200 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => setIsOpen(false)}
+                  message="Logging In..."
+                >
+                  Login
+                </LiveLink>
+                <LiveLink
+                  href="/register"
+                  className="block rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:from-sky-700 hover:to-indigo-700"
+                  onClick={() => setIsOpen(false)}
+                  message="Creating Account..."
+                >
+                  Register
+                </LiveLink>
+                <a
+                  href={GOOGLE_AUTH_URL}
+                  onClick={handleGoogleLogin}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
+                  <span>Google</span>
+                </a>
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col gap-3 pt-2">
-              <LiveLink href="/login" className="block text-center text-gray-600 hover:text-blue-600 font-medium transition" onClick={() => setIsOpen(false)} message="Logging In...">
-                Login
-              </LiveLink>
-              <LiveLink href="/register" className="block text-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm font-medium" onClick={() => setIsOpen(false)} message="Creating Account...">
-                Register
-              </LiveLink>
-              <a href={GOOGLE_AUTH_URL} className="block text-center bg-white text-gray-700 border border-gray-300 px-5 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm font-medium flex items-center justify-center gap-2" onClick={handleGoogleLogin}>
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-                <span>Google</span>
-              </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

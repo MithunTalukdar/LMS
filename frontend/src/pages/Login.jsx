@@ -1,7 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import LiveLink from "../components/LiveLink";
 import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function Login() {
@@ -189,6 +188,8 @@ export default function Login() {
 
   const handleGoogleLogin = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     // Play sound
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
     audio.play().catch(err => console.warn(err));
@@ -203,131 +204,217 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login to LMS</h2>
+    <div
+      className="relative min-h-[calc(100vh-170px)] overflow-hidden px-4 py-10 md:py-14"
+      style={{
+        fontFamily: "'Sora', sans-serif",
+        background:
+          "radial-gradient(circle at 12% 10%, #67e8f9 0%, transparent 30%), radial-gradient(circle at 92% 12%, #93c5fd 0%, transparent 32%), linear-gradient(145deg, #f8fafc 0%, #eff6ff 50%, #ecfeff 100%)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(255,255,255,0.42), rgba(255,255,255,0.16), rgba(255,255,255,0.42))",
+        }}
+      />
+      <div className="pointer-events-none absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-300/40 blur-3xl animate-float-slow" />
+      <div className="pointer-events-none absolute -right-16 bottom-14 h-72 w-72 rounded-full bg-blue-300/40 blur-3xl animate-float-slow-delayed" />
 
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center font-medium">{error}</div>}
-        {devOtpHint && <div className="bg-blue-100 text-blue-800 p-3 rounded mb-4 text-sm text-center font-medium">{devOtpHint}</div>}
+      <div className="relative mx-auto w-full max-w-md animate-fade-up">
+        <div className="rounded-3xl border border-white/80 bg-white/85 p-6 shadow-[0_26px_80px_-34px_rgba(15,23,42,0.55)] backdrop-blur-xl md:p-8">
+          <p className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-cyan-600" />
+            Secure Access
+          </p>
 
-        {step === 1 ? (
-          <>
-            <input
-              className="w-full border p-2 mb-4 rounded"
-              placeholder="Email"
-              onChange={e => setEmail(e.target.value)}
-            />
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">
+            {step === 1 ? "Welcome Back" : "Verify Identity"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {step === 1
+              ? "Sign in to continue your learning journey."
+              : "Enter the verification code we sent to your email."}
+          </p>
 
-            <div className="relative mb-4">
-              <input
-                className="w-full border p-2 rounded pr-10"
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                onChange={e => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
-              </button>
+          {error && (
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+              {error}
             </div>
+          )}
+          {devOtpHint && (
+            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+              {devOtpHint}
+            </div>
+          )}
 
-            <div className="flex items-center justify-between mb-4">
-              <label className="flex items-center text-sm text-gray-600 cursor-pointer">
+          {step === 1 ? (
+            <>
+              <div className="mt-5 space-y-4">
                 <input
-                  type="checkbox"
-                  className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
-                Remember Me
-              </label>
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
 
-            <button
-              onClick={handleLogin}
-              className="w-full bg-blue-600 text-white py-2 rounded"
-            >
-              Login
-            </button>
+                <div className="relative">
+                  <input
+                    className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 pr-11 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 px-3 text-slate-500 transition hover:text-slate-700"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
 
-            <div className="my-4 flex items-center">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="mx-4 text-gray-500 text-sm">OR</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>
+              <div className="mt-4 flex items-center justify-between">
+                <label className="flex items-center text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    className="mr-2 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  Remember Me
+                </label>
+                <Link to="/forgot-password" className="text-sm font-medium text-cyan-700 hover:text-cyan-800">
+                  Forgot Password?
+                </Link>
+              </div>
 
-            <a href={GOOGLE_AUTH_URL} onClick={handleGoogleLogin} className="w-full bg-white text-gray-700 border border-gray-300 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 transition shadow-sm font-medium">
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-              <span>Sign in with Google</span>
-            </a>
-
-            <p className="text-center mt-4 text-sm">
-              New user?{" "}
-              <Link to="/register" className="text-blue-600">
-                Register here
-              </Link>
-            </p>
-          </>
-        ) : (
-          <>
-            <div className="text-center mb-6">
-              <p className="text-gray-600">We sent a verification code to</p>
-              <p className="font-medium text-gray-800">{email}</p>
-            </div>
-            
-            <input
-              className="w-full border p-2 mb-4 rounded text-center tracking-widest text-lg"
-              placeholder="Enter 6-digit Code"
-              maxLength={6}
-              value={otp}
-              onChange={e => setOtp(e.target.value)}
-            />
-
-            <button
-              onClick={handleVerifyOtp}
-              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-            >
-              Verify & Login
-            </button>
-
-            <div className="flex justify-between items-center mt-4">
               <button
-                onClick={() => {
-                  setStep(1);
-                  setError("");
-                }}
-                className="text-gray-500 text-sm hover:underline"
+                onClick={handleLogin}
+                disabled={isSubmitting}
+                className="mt-5 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-3 font-semibold text-white shadow-[0_14px_26px_-14px_rgba(14,116,144,0.85)] transition hover:-translate-y-0.5 hover:from-cyan-700 hover:to-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Back to Login
+                Login
               </button>
+
+              <div className="my-5 flex items-center">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="mx-3 text-xs font-semibold uppercase tracking-wide text-slate-400">or continue with</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <a
+                href={GOOGLE_AUTH_URL}
+                onClick={handleGoogleLogin}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-3 font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50"
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
+                <span>Sign in with Google</span>
+              </a>
+
+              <p className="mt-5 text-center text-sm text-slate-600">
+                New user?{" "}
+                <Link to="/register" className="font-semibold text-cyan-700 hover:text-cyan-800">
+                  Register here
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="mt-5 rounded-xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-center">
+                <p className="text-sm text-slate-600">Verification code sent to</p>
+                <p className="font-semibold text-slate-900">{email}</p>
+              </div>
+
+              <input
+                className="mt-4 w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-center text-lg tracking-[0.35em] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                placeholder="000000"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+
               <button
-                onClick={handleResendOtp}
-                disabled={timer > 0}
-                className={`text-sm ${timer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+                onClick={handleVerifyOtp}
+                disabled={isSubmitting}
+                className="mt-5 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-semibold text-white shadow-[0_14px_26px_-14px_rgba(5,150,105,0.85)] transition hover:-translate-y-0.5 hover:from-emerald-600 hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
+                Verify & Login
               </button>
-            </div>
-          </>
-        )}
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => {
+                    setStep(1);
+                    setError("");
+                  }}
+                  className="rounded-lg px-2 py-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleResendOtp}
+                  disabled={timer > 0 || isSubmitting}
+                  className={`rounded-lg px-2 py-1 text-sm font-medium transition ${
+                    timer > 0 || isSubmitting
+                      ? "cursor-not-allowed text-slate-400"
+                      : "text-cyan-700 hover:text-cyan-800"
+                  }`}
+                >
+                  {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      {isSubmitting && <LoadingOverlay message={loadingMessage} status={loadingStatus} soundUrl={soundUrl} onCancel={loadingStatus === 'loading' ? () => setIsSubmitting(false) : null} />}
+      {isSubmitting && (
+        <LoadingOverlay
+          message={loadingMessage}
+          status={loadingStatus}
+          soundUrl={soundUrl}
+          onCancel={loadingStatus === "loading" ? () => setIsSubmitting(false) : null}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ export default function Topbar({ name, logout }) {
       <h2 className="font-semibold text-lg">Welcome, {name}</h2>
       <button
         onClick={logout}
-        className="bg-red-500 text-white px-4 py-1 rounded"
+        className="rounded-lg border border-red-700 bg-red-600 px-4 py-1.5 font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
       >
         Logout
       </button>

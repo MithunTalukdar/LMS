@@ -122,101 +122,157 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {showOtp ? "Verify Your Email" : "Create Account"}
-        </h2>
+    <div
+      className="relative min-h-[calc(100vh-170px)] overflow-hidden px-4 py-10 md:py-14"
+      style={{
+        fontFamily: "'Sora', sans-serif",
+        background:
+          "radial-gradient(circle at 10% 12%, #a7f3d0 0%, transparent 30%), radial-gradient(circle at 90% 10%, #93c5fd 0%, transparent 34%), linear-gradient(145deg, #f8fafc 0%, #ecfdf5 50%, #eff6ff 100%)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.14), rgba(255,255,255,0.42))",
+        }}
+      />
+      <div className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-emerald-300/40 blur-3xl animate-float-slow" />
+      <div className="pointer-events-none absolute -right-16 bottom-16 h-72 w-72 rounded-full bg-blue-300/40 blur-3xl animate-float-slow-delayed" />
 
-        {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center font-medium">
-            {error}
-          </div>
-        )}
-        {devOtpHint && (
-          <div className="bg-blue-100 text-blue-800 p-3 rounded mb-4 text-sm text-center font-medium">
-            {devOtpHint}
-          </div>
-        )}
+      <div className="relative mx-auto w-full max-w-md animate-fade-up">
+        <div className="rounded-3xl border border-white/80 bg-white/85 p-6 shadow-[0_26px_80px_-34px_rgba(15,23,42,0.55)] backdrop-blur-xl md:p-8">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-900">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
+            Join LMS
+          </p>
 
-        {!showOtp ? (
-          <>
-            <input
-              className="w-full border p-2 mb-4 rounded"
-              placeholder="Full Name"
-              onChange={e => setName(e.target.value)}
-            />
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">
+            {showOtp ? "Verify Account" : "Create Account"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {showOtp
+              ? "Enter the OTP to activate your account."
+              : "Build your profile and start learning today."}
+          </p>
 
-            <input
-              className="w-full border p-2 mb-4 rounded"
-              placeholder="Email"
-              onChange={e => setEmail(e.target.value)}
-            />
-
-            <input
-              className="w-full border p-2 mb-4 rounded"
-              type="password"
-              placeholder="Password"
-              onChange={e => setPassword(e.target.value)}
-            />
-
-            <button
-              onClick={register}
-              className="w-full bg-green-600 text-white py-2 rounded"
-            >
-              Sign Up
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="text-center text-sm text-gray-600 mb-4">
-              Enter the 6-digit code sent to <strong>{email}</strong>
-            </p>
-            <input
-              className="w-full border p-2 mb-4 rounded text-center tracking-widest text-lg"
-              placeholder="000000"
-              maxLength={6}
-              onChange={e => setOtp(e.target.value)}
-            />
-            <button
-              onClick={handleVerifyOtp}
-              className="w-full bg-blue-600 text-white py-2 rounded"
-            >
-              Verify & Activate
-            </button>
-
-            <div className="flex justify-between items-center mt-4">
-              <button
-                onClick={() => setShowOtp(false)}
-                className="text-gray-500 text-sm hover:underline"
-              >
-                Back to Register
-              </button>
-              <button
-                onClick={handleResendOtp}
-                disabled={timer > 0}
-                className={`text-sm ${timer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
-              >
-                {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
-              </button>
+          {error && (
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+              {error}
             </div>
-          </>
-        )}
+          )}
+          {devOtpHint && (
+            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+              {devOtpHint}
+            </div>
+          )}
 
-        <p className="text-center mt-4 text-sm">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-600">
-            Login
-          </Link>
-        </p>
+          {!showOtp ? (
+            <>
+              <div className="mt-5 space-y-4">
+                <input
+                  className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+
+                <input
+                  className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+
+                <input
+                  className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+
+              <button
+                onClick={register}
+                disabled={isSubmitting}
+                className="mt-5 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-semibold text-white shadow-[0_14px_26px_-14px_rgba(5,150,105,0.85)] transition hover:-translate-y-0.5 hover:from-emerald-600 hover:to-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-center">
+                <p className="text-sm text-slate-600">Enter the 6-digit code sent to</p>
+                <p className="font-semibold text-slate-900">{email}</p>
+              </div>
+
+              <input
+                className="mt-4 w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-3 text-center text-lg tracking-[0.35em] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                placeholder="000000"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+
+              <button
+                onClick={handleVerifyOtp}
+                disabled={isSubmitting}
+                className="mt-5 w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 py-3 font-semibold text-white shadow-[0_14px_26px_-14px_rgba(37,99,235,0.85)] transition hover:-translate-y-0.5 hover:from-blue-700 hover:to-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Verify & Activate
+              </button>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => setShowOtp(false)}
+                  className="rounded-lg px-2 py-1 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleResendOtp}
+                  disabled={timer > 0 || isSubmitting}
+                  className={`rounded-lg px-2 py-1 text-sm font-medium transition ${
+                    timer > 0 || isSubmitting
+                      ? "cursor-not-allowed text-slate-400"
+                      : "text-emerald-700 hover:text-emerald-800"
+                  }`}
+                >
+                  {timer > 0 ? `Resend in ${timer}s` : "Resend OTP"}
+                </button>
+              </div>
+            </>
+          )}
+
+          <p className="mt-5 text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link to="/login" className="font-semibold text-emerald-700 hover:text-emerald-800">
+              Login
+            </Link>
+          </p>
+        </div>
       </div>
 
       {isSubmitting && (
-        <LoadingOverlay 
-          message={loadingStatus === 'success' ? (showOtp ? "Verified!" : "OTP Sent!") : (showOtp ? "Verifying..." : "Creating Account...")} 
-          status={loadingStatus} 
-          soundUrl={loadingStatus === 'success' ? "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" : ""}
-          onCancel={loadingStatus === 'loading' ? () => setIsSubmitting(false) : null} 
+        <LoadingOverlay
+          message={
+            loadingStatus === "success"
+              ? showOtp
+                ? "Verified!"
+                : "OTP Sent!"
+              : showOtp
+                ? "Verifying..."
+                : "Creating Account..."
+          }
+          status={loadingStatus}
+          soundUrl={
+            loadingStatus === "success"
+              ? "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"
+              : ""
+          }
+          onCancel={loadingStatus === "loading" ? () => setIsSubmitting(false) : null}
         />
       )}
     </div>
