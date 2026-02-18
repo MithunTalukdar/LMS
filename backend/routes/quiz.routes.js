@@ -13,17 +13,33 @@ router.post(
   protect(["teacher"]),
   async (req, res) => {
     try {
-      const { courseId, question, options, correctAnswer } = req.body;
+      const { courseId, topic, question, options, correctAnswer } = req.body;
+      const cleanQuestion = typeof question === "string" ? question.trim() : "";
+      const cleanTopic = typeof topic === "string" && topic.trim() ? topic.trim() : "General";
+      const normalizedOptions = Array.isArray(options)
+        ? options.map(opt => String(opt || "").trim())
+        : [];
+      const answerIndex = Number(correctAnswer);
 
-      if (!courseId || !question || !options || correctAnswer === undefined) {
-        return res.status(400).json({ message: "All fields required" });
+      if (
+        !courseId ||
+        !cleanQuestion ||
+        !Array.isArray(options) ||
+        normalizedOptions.length !== 4 ||
+        normalizedOptions.some(opt => !opt) ||
+        Number.isNaN(answerIndex) ||
+        answerIndex < 0 ||
+        answerIndex >= normalizedOptions.length
+      ) {
+        return res.status(400).json({ message: "MCQ requires question, exactly 4 options, and one correct answer" });
       }
 
       const quiz = await Quiz.create({
         courseId,
-        question,
-        options,
-        correctAnswer
+        topic: cleanTopic,
+        question: cleanQuestion,
+        options: normalizedOptions,
+        correctAnswer: answerIndex
       });
 
       res.status(201).json(quiz);

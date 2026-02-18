@@ -9,6 +9,8 @@ import courseRoutes from "./routes/course.routes.js";
 import progressRoutes from "./routes/progress.routes.js";
 import quizRoutes from "./routes/quiz.routes.js";
 import seedCourses from "./utils/seedCourses.js";
+import seedQuizzes from "./utils/seedQuizzes.js";
+import seedTasks from "./utils/seedTasks.js";
 import certificateRoutes from "./routes/certificate.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
@@ -59,7 +61,9 @@ mongoose.connect(process.env.MONGO_URI)
 
     console.log("------------------------------------------------");
 
-    await seedCourses();   // 🔥 AUTO ADD COURSES
+    await seedCourses();
+    await seedTasks();
+    await seedQuizzes();
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

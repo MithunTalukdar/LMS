@@ -1,94 +1,83 @@
-import React, { useEffect } from 'react';
+import { useEffect } from "react";
 
-const LoadingOverlay = ({ message, onCancel, logo, status = 'loading', soundUrl }) => {
+const LoadingOverlay = ({ message, onCancel, logo, status = "loading", soundUrl }) => {
+  const isLoading = status === "loading";
+
   useEffect(() => {
-    if (status === 'success' && soundUrl) {
-      // Standard success chime sound
-      const audio = new Audio(soundUrl);
-      
-      // Play sound after a short delay to sync with the checkmark animation finishing (~1s)
-      const timer = setTimeout(() => {
-        audio.play().catch(err => console.warn("Audio playback failed (likely browser policy):", err));
-      }, 1000);
+    if (status !== "success" || !soundUrl) return undefined;
 
-      return () => clearTimeout(timer);
-    }
+    const audio = new Audio(soundUrl);
+    const timer = setTimeout(() => {
+      audio.play().catch(() => {});
+    }, 650);
+
+    return () => clearTimeout(timer);
   }, [status, soundUrl]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 9999,
-      backdropFilter: 'blur(5px)',
-      animation: 'fadeIn 0.3s ease-out'
-    }}>
-      {logo ? (
-        <img src={logo} alt="Logo" style={{ width: '60px', marginBottom: '20px', objectFit: 'contain' }} />
-      ) : (
-        <div style={{ fontSize: '40px', marginBottom: '20px' }}>📚</div>
-      )}
-      {status === 'loading' ? (
-        <div style={{
-          width: '50px',
-          height: '50px',
-          border: '4px solid rgba(255, 255, 255, 0.3)',
-          borderTop: '4px solid #ffffff',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-      ) : (
-        <div style={{ width: '80px', height: '80px' }}>
-          <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            display: 'block',
-            strokeWidth: '2',
-            stroke: '#fff',
-            strokeMiterlimit: '10',
-            boxShadow: 'inset 0px 0px 0px #7ac142',
-            animation: 'fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both'
-          }}>
-            <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none" style={{ strokeDasharray: '166', strokeDashoffset: '166', strokeWidth: '2', strokeMiterlimit: '10', stroke: '#7ac142', fill: 'none', animation: 'stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards' }} />
-            <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" style={{ transformOrigin: '50% 50%', strokeDasharray: '48', strokeDashoffset: '48', animation: 'stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards' }} />
-          </svg>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.55)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+            {logo ? (
+              <img src={logo} alt="Brand" className="h-8 w-8 object-contain" />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
+                <path d="M8 4h8v16H8z" className="fill-cyan-500/80 stroke-cyan-700" strokeWidth="1" />
+                <path d="M4 8h8v12H4z" className="fill-indigo-500/70 stroke-indigo-700" strokeWidth="1" />
+                <path d="M12 6h8v14h-8z" className="fill-emerald-500/70 stroke-emerald-700" strokeWidth="1" />
+              </svg>
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {isLoading ? "Processing" : "Completed"}
+            </p>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900">
+              {message || (isLoading ? "Loading..." : "Success")}
+            </h3>
+          </div>
         </div>
-      )}
-      <h3 style={{ color: 'white', marginTop: '20px', fontFamily: 'sans-serif' }}>{message}</h3>
-      {onCancel && status === 'loading' && (
-        <button
-          onClick={onCancel}
-          style={{
-            marginTop: '20px',
-            padding: '8px 20px',
-            backgroundColor: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.6)',
-            color: 'white',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontFamily: 'sans-serif'
-          }}
-        >
-          Go Back
-        </button>
-      )}
-      <style>{`
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
-        @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
-        @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 30px #7ac142; } }
-      `}</style>
+
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center justify-center">
+            {isLoading ? (
+              <div className="relative">
+                <div className="h-12 w-12 rounded-full border-4 border-slate-200" />
+                <div className="absolute inset-0 h-12 w-12 animate-spin rounded-full border-4 border-transparent border-t-cyan-600 border-r-indigo-600" />
+              </div>
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-300 bg-emerald-50">
+                <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-emerald-600">
+                  <path
+                    d="M5 12.5l4.2 4.2L19 7.8"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          <p className="mt-3 text-center text-sm text-slate-600">
+            {isLoading ? "Please wait while we prepare your next step." : "Done. Redirecting now."}
+          </p>
+        </div>
+
+        {onCancel && isLoading && (
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={onCancel}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Go Back
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

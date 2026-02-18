@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 import { AuthContext } from "../context/AuthContext";
 
@@ -181,11 +181,7 @@ const PUBLIC_CARD_THEMES = [
 
 const getCourseLabel = (index) => `Course ${String(index + 1).padStart(2, "0")}`;
 
-const getLevelBadgeClass = (level, isPublic) => {
-  if (!isPublic) {
-    return "bg-slate-100 text-slate-700 border-slate-200";
-  }
-
+const getLevelBadgeClass = (level) => {
   switch (String(level).toLowerCase()) {
     case "beginner":
       return "bg-emerald-100 text-emerald-800 border-emerald-200";
@@ -204,7 +200,7 @@ export default function Courses({ isPublic = false }) {
 
   const [courses, setCourses] = useState([]);
   const [enrolled, setEnrolled] = useState([]);
-  const [expandedDemoId, setExpandedDemoId] = useState("");
+  const [expandedDemoKey, setExpandedDemoKey] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -268,6 +264,24 @@ export default function Courses({ isPublic = false }) {
     };
   }, [isPublic, user]);
 
+  useEffect(() => {
+    if (!expandedDemoKey) return;
+
+    const exists = courses.some((course, index) => {
+      const courseId = course._id || course.id || `${course.title}-${index}`;
+      const key = `${courseId}-${index}`;
+      return key === expandedDemoKey;
+    });
+
+    if (!exists) {
+      setExpandedDemoKey("");
+    }
+  }, [courses, expandedDemoKey]);
+
+  const toggleDemoSection = key => {
+    setExpandedDemoKey(prev => (prev === key ? "" : key));
+  };
+
   const enroll = async (courseId, isMock) => {
     if (!user) {
       navigate("/login");
@@ -290,57 +304,79 @@ export default function Courses({ isPublic = false }) {
     }
   };
 
-  const rootClassName = isPublic
-    ? "relative min-h-[calc(100vh-170px)] overflow-hidden"
-    : "bg-transparent";
+  const rootClassName =
+    "relative min-h-[calc(100vh-170px)] overflow-hidden rounded-[2rem] border border-slate-200/70";
+
+  if (isPublic && user) {
+    return <Navigate to="/dashboard/courses" replace />;
+  }
+
   const rootStyle = isPublic
     ? {
         fontFamily: "'Sora', sans-serif",
         background:
           "radial-gradient(circle at 10% 8%, #67e8f9 0%, transparent 28%), radial-gradient(circle at 88% 12%, #a5b4fc 0%, transparent 32%), linear-gradient(145deg, #f8fafc 0%, #eef2ff 52%, #f0f9ff 100%)",
       }
-    : undefined;
+    : {
+        fontFamily: "'Sora', sans-serif",
+        background:
+          "radial-gradient(circle at 8% 10%, #f9a8d4 0%, transparent 26%), radial-gradient(circle at 88% 14%, #67e8f9 0%, transparent 30%), radial-gradient(circle at 82% 85%, #fcd34d 0%, transparent 32%), linear-gradient(145deg,#fff7ed 0%,#fef3c7 26%,#ecfeff 54%,#eef2ff 100%)",
+      };
 
   const contentClassName = isPublic
     ? "relative max-w-6xl mx-auto px-4 py-10 md:py-14 pb-16"
-    : "max-w-6xl mx-auto px-4 py-8";
+    : "relative max-w-6xl mx-auto px-4 py-9 md:py-11 pb-12";
 
   return (
     <div
       className={rootClassName}
       style={rootStyle}
     >
-      {isPublic && (
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0.18), rgba(255,255,255,0.4))",
-          }}
-        />
-      )}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: isPublic
+            ? "linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0.18), rgba(255,255,255,0.4))"
+            : "linear-gradient(to bottom, rgba(255,255,255,0.52), rgba(255,255,255,0.22), rgba(255,255,255,0.46))",
+        }}
+      />
 
-      {isPublic && (
-        <>
-          <div className="pointer-events-none absolute -left-16 top-14 h-64 w-64 rounded-full bg-cyan-300/45 blur-3xl animate-float-slow" />
-          <div className="pointer-events-none absolute right-0 bottom-0 h-72 w-72 rounded-full bg-indigo-300/35 blur-3xl animate-float-slow-delayed" />
-        </>
+      <div
+        className={`pointer-events-none absolute -left-16 top-12 h-64 w-64 rounded-full blur-3xl ${
+          isPublic ? "bg-cyan-300/45" : "bg-pink-300/45"
+        } animate-float-slow`}
+      />
+      <div
+        className={`pointer-events-none absolute right-0 bottom-0 h-72 w-72 rounded-full blur-3xl ${
+          isPublic ? "bg-indigo-300/35" : "bg-amber-300/35"
+        } animate-float-slow-delayed`}
+      />
+      {!isPublic && (
+        <div className="pointer-events-none absolute right-20 top-16 h-56 w-56 rounded-full bg-cyan-200/35 blur-3xl animate-float-slow" />
       )}
 
       <div className={contentClassName}>
-        <div className={isPublic ? "mb-8 md:mb-10 animate-fade-up" : "mb-6"}>
-          {isPublic && (
-            <p className="inline-flex items-center gap-2 text-xs md:text-sm font-semibold uppercase tracking-[0.16em] text-cyan-900 bg-cyan-100/80 border border-cyan-200 rounded-full px-4 py-2 shadow-sm">
-              <span className="inline-block h-2 w-2 rounded-full bg-cyan-600" />
-              Course Catalog
-            </p>
-          )}
+        <div className={isPublic ? "mb-8 md:mb-10 animate-fade-up" : "mb-8 md:mb-10 animate-fade-up"}>
+          <p
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-semibold uppercase tracking-[0.16em] shadow-sm ${
+              isPublic
+                ? "text-cyan-900 bg-cyan-100/80 border border-cyan-200"
+                : "text-fuchsia-900 bg-fuchsia-100/80 border border-fuchsia-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                isPublic ? "bg-cyan-600" : "bg-fuchsia-600"
+              }`}
+            />
+            {isPublic ? "Course Catalog" : "Skill Universe"}
+          </p>
 
           <h2
             className={
               isPublic
                 ? "mt-4 text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900"
-                : "text-2xl font-bold text-slate-900"
+                : "mt-4 text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900"
             }
           >
             All Courses
@@ -350,7 +386,7 @@ export default function Courses({ isPublic = false }) {
             className={
               isPublic
                 ? "mt-3 text-base md:text-lg text-slate-700 max-w-2xl"
-                : "text-sm text-slate-600 mt-1"
+                : "mt-3 text-base md:text-lg text-slate-700 max-w-2xl"
             }
           >
             Explore available courses and start learning.
@@ -376,27 +412,29 @@ export default function Courses({ isPublic = false }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           {courses.map((course, index) => {
             const courseId = course._id || course.id || `${course.title}-${index}`;
+            const demoKey = `${courseId}-${index}`;
             const isEnrolled = enrolled.includes(courseId);
             const isMock = Boolean(course.isMock);
             const level = course.level || "General";
             const duration = course.duration || "Self-paced";
             const demoContent = course.demo;
-            const isDemoOpen = expandedDemoId === courseId;
+            const isDemoOpen = expandedDemoKey === demoKey;
             const cardTheme = PUBLIC_CARD_THEMES[index % PUBLIC_CARD_THEMES.length];
 
             const cardClassName = isPublic
               ? "group relative isolate overflow-hidden rounded-3xl border-2 backdrop-blur-md p-5 md:p-6 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_30px_70px_-30px_rgba(37,99,235,0.5)] animate-fade-up"
-              : "relative bg-white border border-black/70 rounded-2xl p-5 shadow-sm hover:shadow-md transition";
+              : "group relative isolate overflow-hidden rounded-3xl border-2 backdrop-blur-md p-5 md:p-6 shadow-[0_20px_54px_-24px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_30px_70px_-30px_rgba(219,39,119,0.45)] animate-fade-up";
             const cardStyle = isPublic
               ? { borderColor: "#111827", background: cardTheme.cardBackground }
-              : undefined;
-            const cardInlineStyle = isPublic
-              ? { ...cardStyle, animationDelay: `${index * 0.08}s` }
-              : undefined;
+              : {
+                  borderColor: "rgba(17,24,39,0.84)",
+                  background: `linear-gradient(160deg, rgba(255,255,255,0.95) 0%, ${cardTheme.demoBg} 100%)`,
+                };
+            const cardInlineStyle = { ...cardStyle, animationDelay: `${index * 0.08}s` };
 
             const buttonPrimaryClass = isPublic
               ? "w-full border px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-105"
-              : "w-full mt-4 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium";
+              : "w-full mt-4 border text-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-110";
             const buttonPrimaryStyle = isPublic
               ? {
                   background: cardTheme.startBackground,
@@ -404,29 +442,42 @@ export default function Courses({ isPublic = false }) {
                   color: cardTheme.startText,
                   boxShadow: "0 10px 20px -15px rgba(15,23,42,0.4)",
                 }
-              : undefined;
+              : {
+                  background: "linear-gradient(90deg,#2563eb,#0ea5e9)",
+                  borderColor: "#0c4a6e",
+                  color: "#ffffff",
+                  boxShadow: "0 12px 24px -12px rgba(14,116,144,0.68)",
+                };
 
             const buttonEnrollClass = isPublic
               ? "w-full border text-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-110"
-              : "w-full mt-4 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm font-medium";
+              : "w-full mt-4 border text-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-110";
             const buttonEnrollStyle = isPublic
               ? {
                   background: cardTheme.enrollBackground,
                   borderColor: cardTheme.borderColor,
                   boxShadow: cardTheme.enrollShadow,
                 }
-              : undefined;
+              : {
+                  background: "linear-gradient(90deg,#16a34a,#0d9488)",
+                  borderColor: "#065f46",
+                  boxShadow: "0 12px 24px -12px rgba(5,150,105,0.65)",
+                };
 
             const loginButtonClass = isPublic
               ? "group w-full border text-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-110"
-              : "w-full mt-4 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium";
+              : "group w-full mt-4 border text-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-lg hover:-translate-y-0.5 hover:brightness-110";
             const loginButtonStyle = isPublic
               ? {
                   background: cardTheme.loginBackground,
                   borderColor: cardTheme.borderColor,
                   boxShadow: cardTheme.loginShadow,
                 }
-              : undefined;
+              : {
+                  background: cardTheme.loginBackground,
+                  borderColor: "#312e81",
+                  boxShadow: cardTheme.loginShadow,
+                };
 
             const demoTagStyle = isPublic
               ? {
@@ -434,29 +485,39 @@ export default function Courses({ isPublic = false }) {
                   backgroundColor: cardTheme.demoBg,
                   borderColor: cardTheme.demoBorder,
                 }
-              : undefined;
+              : {
+                  color: "#7c2d12",
+                  backgroundColor: "rgba(255,237,213,0.86)",
+                  borderColor: "#fdba74",
+                };
 
             const innerPanelStyle = isPublic
               ? { borderColor: cardTheme.innerBorder }
-              : undefined;
+              : {
+                  borderColor: "rgba(14,116,144,0.28)",
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.8), rgba(238,242,255,0.76))",
+                };
 
             const blobStyle = isPublic
               ? { backgroundColor: cardTheme.blobColor }
-              : undefined;
+              : { backgroundColor: "rgba(236,72,153,0.22)" };
 
             const topBarStyle = isPublic
               ? { background: cardTheme.topBarBackground }
-              : undefined;
+              : { background: "linear-gradient(90deg,#ec4899,#8b5cf6,#06b6d4)" };
 
             const demoButtonClass = isPublic
               ? "w-full border border-black text-slate-900 px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-md hover:-translate-y-0.5"
-              : "w-full border border-black text-slate-900 bg-white px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold hover:bg-slate-50";
+              : "w-full border border-black/60 text-slate-900 px-3 py-2.5 rounded-xl transition-all duration-300 text-sm font-semibold shadow-md hover:-translate-y-0.5";
             const demoButtonStyle = isPublic
               ? {
                   background: "linear-gradient(90deg,#ffffff,#f8fafc)",
                   boxShadow: "0 8px 20px -12px rgba(15,23,42,0.45)",
                 }
-              : undefined;
+              : {
+                  background: "linear-gradient(90deg,#ffffff,#fef3c7)",
+                  boxShadow: "0 10px 20px -14px rgba(146,64,14,0.5)",
+                };
 
             return (
               <div
@@ -464,32 +525,22 @@ export default function Courses({ isPublic = false }) {
                 className={cardClassName}
                 style={cardInlineStyle}
               >
-                {isPublic && (
-                  <div
-                    className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
-                    style={topBarStyle}
-                  />
-                )}
+                <div
+                  className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
+                  style={topBarStyle}
+                />
 
-                {isPublic && (
-                  <div
-                    className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full blur-2xl opacity-70"
-                    style={blobStyle}
-                  />
-                )}
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full blur-2xl opacity-70"
+                  style={blobStyle}
+                />
 
-                {isPublic ? (
-                  <div className="pointer-events-none absolute inset-[7px] rounded-[1.2rem] border border-black/25" />
-                ) : (
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl border border-black/35" />
-                )}
+                <div className="pointer-events-none absolute inset-[7px] rounded-[1.2rem] border border-black/20" />
 
-                <div className={isPublic ? "relative h-full flex flex-col" : ""}>
-                  {isPublic && (
-                    <p className="mb-3 inline-flex w-fit rounded-full border border-white/70 bg-white/75 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                      {getCourseLabel(index)}
-                    </p>
-                  )}
+                <div className="relative h-full flex flex-col">
+                  <p className="mb-3 inline-flex w-fit rounded-full border border-white/70 bg-white/75 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                    {getCourseLabel(index)}
+                  </p>
 
                 {isMock && (
                   <span
@@ -522,7 +573,7 @@ export default function Courses({ isPublic = false }) {
 
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                   <span
-                    className={`px-2.5 py-1 rounded-full border ${getLevelBadgeClass(level, isPublic)}`}
+                    className={`px-2.5 py-1 rounded-full border ${getLevelBadgeClass(level)}`}
                   >
                     {level}
                   </span>
@@ -531,33 +582,36 @@ export default function Courses({ isPublic = false }) {
                   </span>
                 </div>
 
-                {isPublic && (
-                  <div
-                    className="mt-4 rounded-2xl border bg-white/70 px-3.5 py-3"
-                    style={innerPanelStyle}
-                  >
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      Learning Outcome
-                    </p>
-                    <p className="mt-1 text-sm text-slate-700">
-                      Build practical skills with guided lessons and quiz-based checkpoints.
-                    </p>
-                  </div>
-                )}
+                <div
+                  className="mt-4 rounded-2xl border bg-white/70 px-3.5 py-3"
+                  style={innerPanelStyle}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Learning Outcome
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    Build practical skills with guided lessons and quiz-based checkpoints.
+                  </p>
+                </div>
 
-                <div className={isPublic ? "mt-auto pt-5 border-t border-black/25" : "mt-4 pt-4 border-t border-black/20"}>
+                <div className="mt-auto pt-5 border-t border-black/20">
                 {isMock && (
                   <>
                     <button
-                      onClick={() => setExpandedDemoId(isDemoOpen ? "" : courseId)}
+                      onClick={() => toggleDemoSection(demoKey)}
                       className={demoButtonClass}
                       style={demoButtonStyle}
+                      aria-expanded={isDemoOpen}
+                      aria-controls={`demo-content-${demoKey}`}
                     >
                       {isDemoOpen ? "Hide Demo Content" : "View Demo Content"}
                     </button>
 
                     {isDemoOpen && demoContent && (
-                      <div className="mt-3 rounded-xl border border-black/30 bg-white/80 p-3 text-sm text-slate-800">
+                      <div
+                        id={`demo-content-${demoKey}`}
+                        className="mt-3 rounded-xl border border-black/30 bg-white/80 p-3 text-sm text-slate-800"
+                      >
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                           Demo Content
                         </p>

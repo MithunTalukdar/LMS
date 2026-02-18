@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import Topbar from "../components/Topbar";
 
 export default function Dashboard() {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto">
-        <Topbar name={user.name} logout={logout} />
+        <Topbar name={user.name} />
         <div className="p-6">
           <Outlet />
         </div>

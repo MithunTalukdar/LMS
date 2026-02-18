@@ -6,6 +6,11 @@ const quizSchema = new mongoose.Schema({
     ref: "Course",
     required: true
   },
+  topic: {
+    type: String,
+    trim: true,
+    default: "General"
+  },
   question: String,
   options: [String],
   correctAnswer: Number
