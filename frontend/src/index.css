@@ -1,3 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fadeUp 0.7s ease-out both;
+  }
+
+  .animate-fade-up-delayed {
+    animation: fadeUp 0.9s ease-out 0.12s both;
+  }
+
+  .animate-float-slow {
+    animation: floatSlow 7s ease-in-out infinite;
+  }
+
+  .animate-float-slow-delayed {
+    animation: floatSlow 8s ease-in-out 0.5s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-up-delayed,
+  .animate-float-slow,
+  .animate-float-slow-delayed {
+    animation: none !important;
+  }
+}
