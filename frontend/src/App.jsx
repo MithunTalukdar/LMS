@@ -17,6 +17,7 @@ import Footer from "./components/Footer";
 import GoogleCallback from "./pages/GoogleCallback";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Home from "./pages/Home";
 
 
 function App() {
@@ -27,7 +28,7 @@ function App() {
           <Navbar />
           <div className="flex-grow">
             <Routes>
-              <Route path="/" element={<Login />} />
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/google/callback" element={<GoogleCallback />} />
