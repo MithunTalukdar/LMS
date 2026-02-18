@@ -206,7 +206,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Authors
 
-Pratik Ch: Das
+Mithun Talukdar
 
 ## 🐛 Bug Reports
 
@@ -214,7 +214,7 @@ If you discover any bugs, please create an issue on GitHub with detailed informa
 
 ## 📧 Contact
 
-For questions or support, please contact: pratikdassonu@gmail.com
+For questions or support, please contact: mithuntalukdar2003@gmail.com
 
 ---
 
