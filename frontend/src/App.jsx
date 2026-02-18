@@ -23,13 +23,13 @@ import Home from "./pages/Home";
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="flex flex-col min-h-screen bg-gray-50">
           <Navbar />
           <div className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/courses" element={<Courses />} />
+              <Route path="/courses" element={<Courses isPublic />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/google/callback" element={<GoogleCallback />} />

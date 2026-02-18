@@ -5,6 +5,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import sendEmail from "../utils/sendEmail.js";
 
+const isDevelopment = process.env.NODE_ENV !== "production";
+const withDevOtp = (payload, otp) =>
+  isDevelopment ? { ...payload, devOtp: otp } : payload;
+
 export const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -56,7 +60,10 @@ export const register = async (req, res) => {
       console.error("❌ Registration OTP Email Error:", emailError.message);
     }
 
-    res.status(201).json({ message: "Verification code sent to your email", email: lowerEmail });
+    res.status(201).json(withDevOtp({
+      message: "Verification code sent to your email",
+      email: lowerEmail
+    }, otp));
   } catch (err) {
     console.error("❌ Registration Error:", err);
     res.status(500).json({ message: "Registration failed" });
@@ -86,6 +93,18 @@ export const login = async (req, res) => {
     if (!user) {
       console.log("❌ Login failed: User not found for email:", lowerEmail);
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (
+      typeof user.password !== "string" ||
+      !user.password ||
+      !user.password.startsWith("$2")
+    ) {
+      console.log("⚠️ Login blocked: account has no valid local password hash:", user.email);
+      return res.status(401).json({
+        message:
+          "This account does not support password login. Use Google sign-in or reset password.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -130,6 +149,21 @@ export const login = async (req, res) => {
     const cooldown = 60 * 1000;
     if (user.lastOtpResentAt && (now - new Date(user.lastOtpResentAt).getTime() < cooldown)) {
       const secondsLeft = Math.ceil((cooldown - (now - new Date(user.lastOtpResentAt).getTime())) / 1000);
+      const hasValidOtp =
+        Boolean(user.loginOtp) &&
+        Boolean(user.loginOtpExpire) &&
+        new Date(user.loginOtpExpire).getTime() > now;
+
+      if (hasValidOtp) {
+        return res.status(200).json(withDevOtp({
+          success: true,
+          requireOtp: true,
+          message: `Verification code already sent. Please wait ${secondsLeft} seconds before requesting another code.`,
+          email: user.email,
+          cooldownSeconds: secondsLeft
+        }, user.loginOtp));
+      }
+
       return res.status(429).json({ message: `Please wait ${secondsLeft} seconds before requesting another code.` });
     }
 
@@ -164,15 +198,27 @@ export const login = async (req, res) => {
       });
 
       console.log(`📧 OTP sent to ${lowerEmail}`);
-      return res.status(200).json({
+      return res.status(200).json(withDevOtp({
         success: true,
         requireOtp: true,
         message: "Verification code sent to your email",
-        email: user.email
-      });
+        email: user.email,
+        cooldownSeconds: 60
+      }, otp));
     } catch (emailError) {
       console.error("❌ Email Service Error:", emailError.message);
-      return res.status(500).json({ 
+      if (isDevelopment) {
+        return res.status(200).json({
+          success: true,
+          requireOtp: true,
+          message: "Email service unavailable. Use development OTP.",
+          email: user.email,
+          devOtp: otp,
+          cooldownSeconds: 60
+        });
+      }
+
+      return res.status(500).json({
         message: "Failed to send verification email. Please try again later.", 
         error: emailError.message 
       });
@@ -204,8 +250,10 @@ export const verifyRegisterOtp = async (req, res) => {
       return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
     }
 
+    const submittedOtp = String(otp).trim();
+
     // Validate OTP
-    if (user.loginOtp !== otp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
+    if (user.loginOtp !== submittedOtp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
       user.otpAttempts = (user.otpAttempts || 0) + 1;
       if (user.otpAttempts >= 5) {
         user.lockUntil = Date.now() + 30 * 60 * 1000; // Lock for 30 minutes
@@ -289,9 +337,17 @@ export const resendRegistrationOtp = async (req, res) => {
         templateId: process.env.BREVO_OTP_TEMPLATE_ID,
         params: { otp }
       });
-      res.status(200).json({ message: "OTP resent successfully" });
+      res.status(200).json(withDevOtp({ message: "OTP resent successfully" }, otp));
     } catch (emailError) {
       console.error("❌ Resend Registration OTP Email Error:", emailError.message);
+      if (isDevelopment) {
+        return res.status(200).json(
+          withDevOtp(
+            { message: "Email service unavailable. Use development OTP." },
+            otp
+          )
+        );
+      }
       res.status(500).json({ message: "Failed to send email" });
     }
   } catch (err) {
@@ -321,8 +377,10 @@ export const verifyLoginOtp = async (req, res) => {
       return res.status(403).json({ message: `Account locked due to too many failed attempts. Try again in ${remaining} minutes.` });
     }
 
+    const submittedOtp = String(otp).trim();
+
     // Validate OTP
-    if (user.loginOtp !== otp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
+    if (user.loginOtp !== submittedOtp || !user.loginOtpExpire || user.loginOtpExpire < Date.now()) {
       user.otpAttempts = (user.otpAttempts || 0) + 1;
       if (user.otpAttempts >= 5) {
         user.lockUntil = Date.now() + 30 * 60 * 1000; // Lock for 30 minutes
@@ -429,9 +487,17 @@ export const resendOtp = async (req, res) => {
         params: { otp }
       });
 
-      return res.status(200).json({ message: "Verification code sent" });
+      return res.status(200).json(withDevOtp({ message: "Verification code sent" }, otp));
     } catch (emailError) {
       console.error("❌ Resend OTP Email Error:", emailError.message);
+      if (isDevelopment) {
+        return res.status(200).json(
+          withDevOtp(
+            { message: "Email service unavailable. Use development OTP." },
+            otp
+          )
+        );
+      }
       return res.status(500).json({ message: "Email service unavailable" });
     }
   } catch (err) {

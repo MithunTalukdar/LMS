@@ -15,6 +15,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [devOtpHint, setDevOtpHint] = useState("");
   const [timer, setTimer] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -42,20 +43,37 @@ export default function Login() {
   }, [timer]);
 
   const handleLogin = async () => {
+    if (isSubmitting) return;
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!normalizedEmail || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+
     setIsSubmitting(true);
     setLoadingMessage("Logging In...");
     setLoadingStatus("loading");
     setSoundUrl("");
     setError("");
+    setDevOtpHint("");
     try {
-      const res = await login({ email, password, rememberMe });
+      const res = await login({ email: normalizedEmail, password, rememberMe });
       if (res.requireOtp) {
         setLoadingMessage("OTP Sent to Email!");
         setLoadingStatus("success");
         setSoundUrl("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
+        if (res.devOtp) {
+          setDevOtpHint(`Development OTP: ${res.devOtp}`);
+          setOtp(String(res.devOtp));
+        }
+        if (res.cooldownSeconds) {
+          setTimer(res.cooldownSeconds);
+        }
         setTimeout(() => {
           setStep(2);
-          setTimer(60);
+          if (!res.cooldownSeconds) setTimer(60);
           setIsSubmitting(false);
         }, 1500);
       } else {
@@ -67,11 +85,11 @@ export default function Login() {
         }, 1500);
       }
     } catch (err) {
-      console.error("Login failed:", err);
       const errorMessage = err.response?.data?.message || "Invalid Credentials";
+      const status = err.response?.status;
       
       // Resilient check: If backend returns 403 for unverified users, transition to OTP step
-      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("verify")) {
+      if (status === 403 && errorMessage.toLowerCase().includes("verify")) {
         setLoadingMessage("Verification Required...");
         setLoadingStatus("success");
         setTimeout(() => {
@@ -82,23 +100,40 @@ export default function Login() {
         return;
       }
 
-      if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
+      if (status === 429) {
+        const waitMatch = errorMessage.match(/(\d+)\s*seconds?/i);
+        const waitSeconds = waitMatch ? Number(waitMatch[1]) : 60;
+        setStep(2);
+        setTimer(waitSeconds);
+        setError(`Code already sent. Enter OTP and wait ${waitSeconds}s to resend.`);
+        if (err.response?.data?.devOtp) {
+          setDevOtpHint(`Development OTP: ${err.response.data.devOtp}`);
+          setOtp(String(err.response.data.devOtp));
+        }
+      } else if (status === 403 && errorMessage.toLowerCase().includes("locked")) {
         setError(errorMessage);
       } else {
-        alert(errorMessage);
+        setError(errorMessage);
       }
       setIsSubmitting(false);
     }
   };
 
   const handleVerifyOtp = async () => {
+    if (isSubmitting) return;
+
+    if (!otp || otp.trim().length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
     setIsSubmitting(true);
     setLoadingMessage("Verifying Code...");
     setLoadingStatus("loading");
     setSoundUrl("");
     setError("");
     try {
-      await verifyOtp({ email, otp, rememberMe });
+      await verifyOtp({ email: email.toLowerCase().trim(), otp: otp.trim(), rememberMe });
       setLoadingMessage("Verification Successful!");
       setLoadingStatus("success");
       setSoundUrl("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
@@ -111,38 +146,42 @@ export default function Login() {
       if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
         setError(errorMessage);
       } else {
-        alert(errorMessage);
+        setError(errorMessage);
       }
       setIsSubmitting(false);
     }
   };
 
   const handleResendOtp = async () => {
-    if (timer > 0) return;
+    if (timer > 0 || isSubmitting) return;
     setIsSubmitting(true);
     setLoadingMessage("Resending OTP...");
     setLoadingStatus("loading");
     setError("");
+    setDevOtpHint("");
     setSoundUrl("");
     try {
-      const res = await login({ email, password, rememberMe });
+      const res = await login({ email: email.toLowerCase().trim(), password, rememberMe });
       if (res.requireOtp) {
         setLoadingMessage("OTP Resent!");
         setLoadingStatus("success");
         setSoundUrl("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
-        setTimer(60);
+        if (res.devOtp) {
+          setDevOtpHint(`Development OTP: ${res.devOtp}`);
+          setOtp(String(res.devOtp));
+        }
+        setTimer(res.cooldownSeconds || 60);
         setTimeout(() => {
           setIsSubmitting(false);
         }, 1500);
       }
     } catch (err) {
-      console.error("Resend failed:", err);
       const errorMessage = err.response?.data?.message || "Failed to resend OTP";
       
       if (err.response?.status === 403 && errorMessage.toLowerCase().includes("locked")) {
         setError(errorMessage);
       } else {
-        alert(errorMessage);
+        setError(errorMessage);
       }
       setIsSubmitting(false);
     }
@@ -169,6 +208,7 @@ export default function Login() {
         <h2 className="text-2xl font-bold mb-6 text-center">Login to LMS</h2>
 
         {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center font-medium">{error}</div>}
+        {devOtpHint && <div className="bg-blue-100 text-blue-800 p-3 rounded mb-4 text-sm text-center font-medium">{devOtpHint}</div>}
 
         {step === 1 ? (
           <>

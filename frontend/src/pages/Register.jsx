@@ -14,6 +14,8 @@ export default function Register() {
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(0);
   const [loadingStatus, setLoadingStatus] = useState("loading");
+  const [error, setError] = useState("");
+  const [devOtpHint, setDevOtpHint] = useState("");
 
   useEffect(() => {
     let interval;
@@ -26,14 +28,35 @@ export default function Register() {
   }, [timer]);
 
   const register = async () => {
+    if (isSubmitting) return;
+
+    const normalizedName = name.trim();
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!normalizedName || !normalizedEmail || !password) {
+      setError("All fields are required.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setIsSubmitting(true);
     setLoadingStatus("loading");
+    setError("");
+    setDevOtpHint("");
     try {
-      await api.post("/auth/register", {
-        name,
-        email,
+      const { data } = await api.post("/auth/register", {
+        name: normalizedName,
+        email: normalizedEmail,
         password
       });
+      if (data?.devOtp) {
+        setDevOtpHint(`Development OTP: ${data.devOtp}`);
+        setOtp(String(data.devOtp));
+      }
 
       setLoadingStatus("success");
       setTimeout(() => {
@@ -42,44 +65,58 @@ export default function Register() {
         setIsSubmitting(false);
       }, 1500);
     } catch (error) {
-      alert(error.response?.data?.message || "Registration failed");
+      setError(error.response?.data?.message || "Registration failed");
       setIsSubmitting(false);
     }
   };
 
   const handleResendOtp = async () => {
-    if (timer > 0) return;
+    if (timer > 0 || isSubmitting) return;
     setIsSubmitting(true);
     setLoadingStatus("loading");
+    setError("");
+    setDevOtpHint("");
     try {
-      await api.post("/auth/resend-registration-otp", {
+      const { data } = await api.post("/auth/resend-registration-otp", {
         email: email.toLowerCase().trim()
       });
+      if (data?.devOtp) {
+        setDevOtpHint(`Development OTP: ${data.devOtp}`);
+        setOtp(String(data.devOtp));
+      }
       setLoadingStatus("success");
       setTimer(60);
       setTimeout(() => {
         setIsSubmitting(false);
       }, 1500);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to resend OTP");
+      setError(error.response?.data?.message || "Failed to resend OTP");
       setIsSubmitting(false);
     }
   };
 
   const handleVerifyOtp = async () => {
+    if (isSubmitting) return;
+
+    if (!otp || otp.trim().length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
     setIsSubmitting(true);
     setLoadingStatus("loading");
+    setError("");
     try {
       await api.post("/auth/verify-registration", {
         email: email.toLowerCase().trim(),
-        otp
+        otp: otp.trim()
       });
       setLoadingStatus("success");
       setTimeout(() => {
-        navigate("/");
+        navigate("/login");
       }, 1500);
     } catch (error) {
-      alert(error.response?.data?.message || "Verification failed");
+      setError(error.response?.data?.message || "Verification failed");
       setIsSubmitting(false);
     }
   };
@@ -90,6 +127,17 @@ export default function Register() {
         <h2 className="text-2xl font-bold mb-6 text-center">
           {showOtp ? "Verify Your Email" : "Create Account"}
         </h2>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center font-medium">
+            {error}
+          </div>
+        )}
+        {devOtpHint && (
+          <div className="bg-blue-100 text-blue-800 p-3 rounded mb-4 text-sm text-center font-medium">
+            {devOtpHint}
+          </div>
+        )}
 
         {!showOtp ? (
           <>
@@ -157,7 +205,7 @@ export default function Register() {
 
         <p className="text-center mt-4 text-sm">
           Already have an account?{" "}
-          <Link to="/" className="text-blue-600">
+          <Link to="/login" className="text-blue-600">
             Login
           </Link>
         </p>
