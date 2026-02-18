@@ -14,7 +14,11 @@ const trimTrailingSlash = (value = "") => value.replace(/\/+$/, "");
 const isLocalhostUrl = (value) =>
   typeof value === "string" && /localhost|127\.0\.0\.1/i.test(value);
 const isHostedRuntime = () =>
-  Boolean(process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL);
+  Boolean(
+    process.env.RENDER_EXTERNAL_URL ||
+      process.env.BACKEND_URL ||
+      process.env.NODE_ENV === "production"
+  );
 
 const getClientUrl = () => {
   if (process.env.CLIENT_URL) return process.env.CLIENT_URL;

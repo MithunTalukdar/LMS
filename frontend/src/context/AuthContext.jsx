@@ -1,91 +1,114 @@
 import { createContext, useState, useEffect } from "react";
-import api from "../utils/axios"; // Ensure this path is correct
+import api from "../utils/axios";
 
 export const AuthContext = createContext();
 
+const getStoredToken = () =>
+  localStorage.getItem("token") || sessionStorage.getItem("token");
+
+const clearStoredToken = () => {
+  localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
+};
+
+const persistToken = (token, rememberMe) => {
+  if (rememberMe) {
+    localStorage.setItem("token", token);
+    sessionStorage.removeItem("token");
+    return;
+  }
+
+  sessionStorage.setItem("token", token);
+  localStorage.removeItem("token");
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ 1. Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUserLoggedIn = async () => {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    let isMounted = true;
 
-      if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        try {
-          // ✅ 2. Call the backend to verify token and get user data
-          const { data } = await api.get("/auth/me");
+    const checkUserLoggedIn = async () => {
+      try {
+        const token = getStoredToken();
+
+        if (!token) {
+          return;
+        }
+
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        const { data } = await api.get("/auth/me", { timeout: 10000 });
+
+        if (isMounted) {
           setUser(data);
-        } catch (error) {
-          // If token is invalid (expired, etc.), clear it
-          console.error("Session expired or invalid:", error);
-          localStorage.removeItem("token");
-          sessionStorage.removeItem("token");
-          delete api.defaults.headers.common['Authorization'];
+        }
+      } catch (error) {
+        console.error("Session expired or invalid:", error);
+        clearStoredToken();
+        delete api.defaults.headers.common.Authorization;
+
+        if (isMounted) {
           setUser(null);
         }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      
-      // ✅ 3. Finished checking, turn off loading
-      setLoading(false);
     };
 
     checkUserLoggedIn();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (userData) => {
-    // Adjust based on your actual login API response structure
     const { data } = await api.post("/auth/login", userData);
-    
+
     if (data.requireOtp) {
       return data;
     }
 
-    if (data.token) {
-        if (userData.rememberMe) {
-            localStorage.setItem("token", data.token);
-        } else {
-            sessionStorage.setItem("token", data.token);
-        }
-        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-        setUser(data.user);
-        return data;
+    if (!data.token) {
+      throw new Error("Login failed: No token received");
     }
-    // If no token, throw error to trigger catch block in Login.jsx
-    throw new Error("Login failed: No token received");
+
+    persistToken(data.token, userData.rememberMe);
+    api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+    setUser(data.user);
+    return data;
   };
 
   const verifyOtp = async (otpData) => {
     const { data } = await api.post("/auth/verify-otp", otpData);
-    if (data.token) {
-        if (otpData.rememberMe) {
-            localStorage.setItem("token", data.token);
-        } else {
-            sessionStorage.setItem("token", data.token);
-        }
-        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-        setUser(data.user);
-        return data;
+
+    if (!data.token) {
+      throw new Error("Verification failed");
     }
-    throw new Error("Verification failed");
+
+    persistToken(data.token, otpData.rememberMe);
+    api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+    setUser(data.user);
+    return data;
   };
 
   const logout = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
     audio.play().catch(() => {});
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    delete api.defaults.headers.common['Authorization'];
+    clearStoredToken();
+    delete api.defaults.headers.common.Authorization;
     setUser(null);
+
     setTimeout(() => {
-      window.location.href = "/login"; // Optional: Force redirect
+      window.location.href = "/login";
     }, 800);
   };
 
-  // ✅ 4. Prevent rendering children until we know if the user is logged in
   if (loading) {
-    return <div className="text-center mt-20">Loading...</div>; 
+    return <div className="text-center mt-20">Loading...</div>;
   }
 
   return (
