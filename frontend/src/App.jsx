@@ -29,6 +29,7 @@ function App() {
           <div className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/courses" element={<Courses />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/google/callback" element={<GoogleCallback />} />
