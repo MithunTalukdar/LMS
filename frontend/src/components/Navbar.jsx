@@ -11,6 +11,13 @@ const desktopLinkClass = ({ isActive }) =>
       : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-white/80 hover:text-slate-900"
   }`;
 
+const studentDesktopLinkClass = ({ isActive }) =>
+  `group relative inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-300 ${
+    isActive
+      ? "bg-white text-slate-900 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.85)]"
+      : "text-slate-600 hover:bg-white/80 hover:text-slate-900"
+  }`;
+
 const mobileLinkClass = ({ isActive }) =>
   `block rounded-xl border px-3 py-2 text-sm font-semibold transition ${
     isActive
@@ -32,17 +39,28 @@ export default function Navbar() {
   const GOOGLE_AUTH_URL =
     import.meta.env.VITE_GOOGLE_AUTH_URL || `${BASE_API_URL}/api/auth/google`;
 
-  useEffect(() => {
-    if (user?.role === "student") {
-      api
-        .get("/tasks/notifications")
-        .then((res) => setNotificationCount(res.data.count))
-        .catch(() => setNotificationCount(0));
-      return;
-    }
+  const visibleNotificationCount = user?.role === "student" ? notificationCount : 0;
 
-    setNotificationCount(0);
-  }, [user]);
+  useEffect(() => {
+    if (user?.role !== "student") return;
+
+    let isMounted = true;
+
+    api
+      .get("/tasks/notifications")
+      .then((res) => {
+        if (!isMounted) return;
+        setNotificationCount(res.data.count || 0);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setNotificationCount(0);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?._id, user?.role]);
 
   const handleLogout = () => {
     if (logout) logout();
@@ -91,9 +109,11 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-2 md:flex">
-            <NavLink to="/" end className={desktopLinkClass}>
-              Home
-            </NavLink>
+            {!user && (
+              <NavLink to="/" end className={desktopLinkClass}>
+                Home
+              </NavLink>
+            )}
             {!user && (
               <NavLink to="/courses" className={desktopLinkClass}>
                 Courses
@@ -103,27 +123,67 @@ export default function Navbar() {
             {user ? (
               <>
                 {user.role === "student" ? (
-                  <>
-                    <NavLink to="/dashboard/courses" className={desktopLinkClass}>
-                      <span className="relative inline-flex items-center">
-                        My Courses
-                        {notificationCount > 0 && (
-                          <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            {notificationCount}
+                  <div className="relative mr-1">
+                    <div className="pointer-events-none absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyan-300/70 via-sky-300/65 to-indigo-300/70" />
+                    <div className="relative flex items-center gap-1 rounded-2xl border border-white/80 bg-white/85 p-1 shadow-[0_16px_30px_-22px_rgba(15,23,42,0.95)] backdrop-blur">
+                      <NavLink to="/dashboard/courses" className={studentDesktopLinkClass}>
+                        {({ isActive }) => (
+                          <span className="relative inline-flex items-center">
+                            <span
+                              className={`absolute -bottom-[2px] left-0 h-[2px] rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-300 ${
+                                isActive ? "w-full opacity-100" : "w-0 opacity-0 group-hover:w-full group-hover:opacity-95"
+                              }`}
+                            />
+                            My Courses
+                            {visibleNotificationCount > 0 && (
+                              <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                {visibleNotificationCount}
+                              </span>
+                            )}
                           </span>
                         )}
-                      </span>
-                    </NavLink>
-                    <NavLink to="/dashboard/progress" className={desktopLinkClass}>
-                      Progress
-                    </NavLink>
-                    <NavLink to="/dashboard/certificates" className={desktopLinkClass}>
-                      Certificates
-                    </NavLink>
-                    <NavLink to="/dashboard/profile" className={desktopLinkClass}>
-                      Profile
-                    </NavLink>
-                  </>
+                      </NavLink>
+
+                      <NavLink to="/dashboard/progress" className={studentDesktopLinkClass}>
+                        {({ isActive }) => (
+                          <span className="relative inline-flex items-center">
+                            <span
+                              className={`absolute -bottom-[2px] left-0 h-[2px] rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-300 ${
+                                isActive ? "w-full opacity-100" : "w-0 opacity-0 group-hover:w-full group-hover:opacity-95"
+                              }`}
+                            />
+                            Progress
+                          </span>
+                        )}
+                      </NavLink>
+
+                      <NavLink to="/dashboard/certificates" className={studentDesktopLinkClass}>
+                        {({ isActive }) => (
+                          <span className="relative inline-flex items-center">
+                            <span
+                              className={`absolute -bottom-[2px] left-0 h-[2px] rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-300 ${
+                                isActive ? "w-full opacity-100" : "w-0 opacity-0 group-hover:w-full group-hover:opacity-95"
+                              }`}
+                            />
+                            Certificates
+                          </span>
+                        )}
+                      </NavLink>
+
+                      <NavLink to="/dashboard/profile" className={studentDesktopLinkClass}>
+                        {({ isActive }) => (
+                          <span className="relative inline-flex items-center">
+                            <span
+                              className={`absolute -bottom-[2px] left-0 h-[2px] rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-300 ${
+                                isActive ? "w-full opacity-100" : "w-0 opacity-0 group-hover:w-full group-hover:opacity-95"
+                              }`}
+                            />
+                            Profile
+                          </span>
+                        )}
+                      </NavLink>
+                    </div>
+                  </div>
                 ) : (
                   <NavLink
                     to={user.role === "admin" ? "/dashboard/admin" : "/dashboard/teacher"}
@@ -139,7 +199,7 @@ export default function Navbar() {
                   </span>
                   <button
                     onClick={handleLogout}
-                    className="rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_20px_-12px_rgba(220,38,38,0.85)] transition hover:-translate-y-0.5 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                    className="inline-flex shrink-0 items-center justify-center min-w-[108px] whitespace-nowrap rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-bold !text-white tracking-wide [text-shadow:0_1px_1px_rgba(0,0,0,0.35)] shadow-[0_14px_24px_-12px_rgba(220,38,38,0.92)] ring-1 ring-red-200 transition hover:-translate-y-0.5 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                   >
                     Logout
                   </button>
@@ -191,9 +251,11 @@ export default function Navbar() {
         {isOpen && (
           <div className="border-t border-slate-200/80 bg-white/90 px-4 pb-4 pt-3 backdrop-blur-xl md:hidden">
             <div className="space-y-2">
-              <NavLink to="/" end className={mobileLinkClass} onClick={() => setIsOpen(false)}>
-                Home
-              </NavLink>
+              {!user && (
+                <NavLink to="/" end className={mobileLinkClass} onClick={() => setIsOpen(false)}>
+                  Home
+                </NavLink>
+              )}
               {!user && (
                 <NavLink to="/courses" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
                   Courses
@@ -207,9 +269,9 @@ export default function Navbar() {
                       <NavLink to="/dashboard/courses" className={mobileLinkClass} onClick={() => setIsOpen(false)}>
                         <span className="inline-flex items-center">
                           My Courses
-                          {notificationCount > 0 && (
+                          {visibleNotificationCount > 0 && (
                             <span className="ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                              {notificationCount}
+                              {visibleNotificationCount}
                             </span>
                           )}
                         </span>
@@ -242,7 +304,7 @@ export default function Navbar() {
                     <p className="text-sm font-semibold text-slate-700">{user.name}</p>
                     <button
                       onClick={handleLogout}
-                      className="mt-2 w-full rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                      className="mt-2 inline-flex w-full shrink-0 items-center justify-center min-w-[108px] whitespace-nowrap rounded-xl border border-red-700 bg-red-600 px-4 py-2 text-sm font-bold !text-white tracking-wide [text-shadow:0_1px_1px_rgba(0,0,0,0.35)] shadow-[0_14px_24px_-12px_rgba(220,38,38,0.92)] ring-1 ring-red-200 transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                     >
                       Logout
                     </button>

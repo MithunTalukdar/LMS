@@ -1,8 +1,24 @@
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --lms-ink: #071737;
+  --lms-sky: #5bc4f5;
+  --lms-cool: #84b3ff;
+  --lms-mint: #7ce3cb;
+  --lms-sun: #ffe3a4;
+}
+
+.home-hero {
+  background:
+    radial-gradient(circle at 12% 16%, rgba(124, 227, 203, 0.48) 0%, transparent 35%),
+    radial-gradient(circle at 88% 12%, rgba(255, 227, 164, 0.48) 0%, transparent 33%),
+    radial-gradient(circle at 42% 92%, rgba(132, 179, 255, 0.28) 0%, transparent 38%),
+    linear-gradient(135deg, #ecf8ff 0%, #f7fbff 48%, #fefaf0 100%);
+}
 
 @keyframes fadeUp {
   from {
@@ -25,6 +41,66 @@
   }
 }
 
+@keyframes driftLarge {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(16px, -18px, 0);
+  }
+}
+
+@keyframes driftMedium {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-12px, -14px, 0);
+  }
+}
+
+@keyframes driftMediumDelayed {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(10px, 12px, 0);
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.68;
+  }
+}
+
+@keyframes shimmerTrack {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes spinVerySlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @layer utilities {
   .animate-fade-up {
     animation: fadeUp 0.7s ease-out both;
@@ -41,13 +117,44 @@
   .animate-float-slow-delayed {
     animation: floatSlow 8s ease-in-out 0.5s infinite;
   }
+
+  .animate-drift-large {
+    animation: driftLarge 10s ease-in-out infinite;
+  }
+
+  .animate-drift-medium {
+    animation: driftMedium 8.5s ease-in-out infinite;
+  }
+
+  .animate-drift-medium-delayed {
+    animation: driftMediumDelayed 9.5s ease-in-out 0.4s infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2.4s ease-in-out infinite;
+  }
+
+  .animate-shimmer-track {
+    background-size: 240% 100%;
+    animation: shimmerTrack 4.8s linear infinite;
+  }
+
+  .animate-spin-very-slow {
+    animation: spinVerySlow 16s linear infinite;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-fade-up-delayed,
   .animate-float-slow,
-  .animate-float-slow-delayed {
+  .animate-float-slow-delayed,
+  .animate-drift-large,
+  .animate-drift-medium,
+  .animate-drift-medium-delayed,
+  .animate-pulse-soft,
+  .animate-shimmer-track,
+  .animate-spin-very-slow {
     animation: none !important;
   }
 }
