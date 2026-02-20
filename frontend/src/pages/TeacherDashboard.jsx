@@ -72,7 +72,6 @@ export default function TeacherDashboard() {
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
-  const [topicSelectOption, setTopicSelectOption] = useState("");
 
   const [topicInputByCourse, setTopicInputByCourse] = useState({});
   const [isAddingTopicByCourse, setIsAddingTopicByCourse] = useState({});
@@ -171,17 +170,6 @@ export default function TeacherDashboard() {
       totalTasks,
     };
   }, [courses, groupedCourses]);
-
-  useEffect(() => {
-    if (suggestedTopicOptions.length === 0) {
-      setTopicSelectOption("");
-      return;
-    }
-
-    if (!matchAnyItem(suggestedTopicOptions, topicSelectOption)) {
-      setTopicSelectOption(suggestedTopicOptions[0]);
-    }
-  }, [suggestedTopicOptions, topicSelectOption]);
 
   const handleDraftTitleChange = (value) => {
     const nextTitle = String(value || "");
@@ -301,7 +289,6 @@ export default function TeacherDashboard() {
       setDraftCourse(createInitialCourseDraft());
       setTopicDraft("");
       setTaskDraft("");
-      setTopicSelectOption("");
       setTitleHint("");
       setCreateSuccess("Course created successfully.");
     } catch (error) {
@@ -540,7 +527,7 @@ export default function TeacherDashboard() {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/85 p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Topics</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr,220px,auto]">
+                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr,auto]">
                   <input
                     type="text"
                     value={topicDraft}
@@ -549,24 +536,6 @@ export default function TeacherDashboard() {
                     placeholder="Add topic"
                     className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                   />
-                  <select
-                    value={topicSelectOption}
-                    onChange={(event) => {
-                      const next = event.target.value;
-                      setTopicSelectOption(next);
-                      if (next) {
-                        setTopicDraft(next);
-                      }
-                    }}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
-                  >
-                    <option value="">Select topic</option>
-                    {suggestedTopicOptions.map((topic) => (
-                      <option key={`topic-option-${topic}`} value={topic}>
-                        {topic}
-                      </option>
-                    ))}
-                  </select>
                   <button
                     type="button"
                     onClick={addDraftTopic}

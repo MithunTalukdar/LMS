@@ -481,21 +481,10 @@ export default function Courses({ isPublic = false }) {
   }, [visibleCourses]);
 
   const privateSections = useMemo(() => {
-    const sections = LEVEL_SECTION_META.map((section) => ({
+    return LEVEL_SECTION_META.map((section) => ({
       ...section,
       items: visibleCoursesByLevel[section.key] || [],
     }));
-
-    sections.push({
-      key: "general",
-      title: "General Courses",
-      subtitle: "Flexible tracks that fit any learning path.",
-      accentClass: "from-slate-500 to-slate-700",
-      chipClass: "border-slate-200 bg-slate-100 text-slate-700",
-      items: visibleCoursesByLevel.general,
-    });
-
-    return sections;
   }, [visibleCoursesByLevel]);
 
   const analytics = useMemo(() => {
