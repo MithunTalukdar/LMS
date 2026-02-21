@@ -1,7 +1,7 @@
 export default function Topbar({ name }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-4 shadow-sm backdrop-blur-xl md:px-6"
+      className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/85 px-3 py-3 shadow-sm backdrop-blur-xl sm:px-4 sm:py-4 md:px-6"
       style={{
         fontFamily: "'Sora', sans-serif",
         background:
@@ -14,8 +14,8 @@ export default function Topbar({ name }) {
       <div className="relative">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dashboard Session</p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-            Welcome, {name}
+          <h2 className="mt-1 break-words text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+            Welcome, {name || "Learner"}
           </h2>
         </div>
       </div>

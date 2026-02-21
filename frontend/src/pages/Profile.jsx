@@ -242,7 +242,7 @@ export default function Profile() {
 
   return (
     <div
-      className="relative isolate overflow-hidden rounded-[2.2rem] border border-slate-200/80 p-4 md:p-7"
+      className="relative isolate overflow-hidden rounded-3xl border border-slate-200/80 p-3 sm:p-4 md:rounded-[2.2rem] md:p-7"
       style={{
         fontFamily: "'Manrope', sans-serif",
         background:
@@ -254,16 +254,16 @@ export default function Profile() {
       <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.26)_1px,transparent_0)] [background-size:22px_22px]" />
 
       <div className="relative">
-        <section className="profile-rise rounded-3xl border border-white/80 bg-white/78 p-5 shadow-[0_30px_62px_-46px_rgba(15,23,42,0.92)] backdrop-blur-xl md:p-6">
-          <p className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-100 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-cyan-900">
+        <section className="profile-rise rounded-2xl border border-white/80 bg-white/78 p-4 shadow-[0_30px_62px_-46px_rgba(15,23,42,0.92)] backdrop-blur-xl sm:rounded-3xl sm:p-5 md:p-6">
+          <p className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-900 sm:px-3.5 sm:text-[11px] sm:tracking-[0.16em]">
             <span className="h-2 w-2 rounded-full bg-cyan-600 animate-pulse-soft" />
             Profile Studio
           </p>
 
-          <div className="mt-4 grid gap-5 lg:grid-cols-[1.15fr,0.85fr]">
-            <div>
+          <div className="mt-4 grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
+            <div className="min-w-0">
               <h2
-                className="text-4xl font-bold leading-[0.95] text-slate-900 md:text-5xl"
+                className="text-3xl font-bold leading-[0.95] text-slate-900 sm:text-4xl md:text-5xl"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 Build a secure
@@ -275,7 +275,7 @@ export default function Profile() {
                 Manage identity details, monitor account quality, and strengthen security from one premium workspace.
               </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-cyan-200 bg-cyan-50/85 px-3 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-cyan-800">Role</p>
                   <p className="mt-1 text-sm font-bold text-cyan-900">{roleMeta.label}</p>
@@ -300,15 +300,15 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.85)]">
-              <div className="flex items-center gap-4">
-                <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${roleMeta.chip} p-[2px] shadow-md`}>
-                  <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-white text-xl font-bold text-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.85)] sm:p-5">
+              <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+                <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${roleMeta.chip} p-[2px] shadow-md sm:h-16 sm:w-16`}>
+                  <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-white text-lg font-bold text-slate-900 sm:text-xl">
                     {initials}
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xl font-bold text-slate-900">{user.name}</p>
+                  <p className="truncate text-lg font-bold text-slate-900 sm:text-xl">{user.name}</p>
                   <p className="truncate text-sm text-slate-600">{user.email}</p>
                   <span className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold ${accountStatus.tone}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${accountStatus.dot}`} />
@@ -318,37 +318,37 @@ export default function Profile() {
               </div>
 
               <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2">
+                <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-slate-600">Member since</span>
-                  <span className="font-semibold text-slate-800">{memberSince}</span>
+                  <span className="font-semibold text-slate-800 sm:text-right">{memberSince}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2">
+                <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-slate-600">Role status</span>
-                  <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${roleMeta.tone}`}>
+                  <span className={`self-start rounded-full border px-2.5 py-1 text-xs font-bold sm:self-auto ${roleMeta.tone}`}>
                     {roleMeta.label}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2">
+                <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-slate-600">Account status</span>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${accountStatus.tone}`}>
+                  <span className={`inline-flex self-start items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold sm:self-auto ${accountStatus.tone}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${accountStatus.dot}`} />
                     {accountStatus.label}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2">
+                <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50/85 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-slate-600">Security checks</span>
-                  <span className="font-semibold text-slate-800">{completedChecks}/6</span>
+                  <span className="font-semibold text-slate-800 sm:text-right">{completedChecks}/6</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mt-6 grid gap-5 xl:grid-cols-[1.06fr,1.2fr]">
+        <section className="mt-5 grid gap-5 sm:mt-6 xl:grid-cols-[1.06fr,1.2fr]">
           <aside className="profile-rise-delay space-y-5">
-            <div className="rounded-3xl border border-slate-200 bg-white/82 p-5 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)]">
+            <div className="rounded-2xl border border-slate-200 bg-white/82 p-4 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)] sm:rounded-3xl sm:p-5">
               <h3
-                className="text-2xl font-bold text-slate-900"
+                className="text-xl font-bold text-slate-900 sm:text-2xl"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 Identity Snapshot
@@ -386,9 +386,9 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white/82 p-5 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)]">
+            <div className="rounded-2xl border border-slate-200 bg-white/82 p-4 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)] sm:rounded-3xl sm:p-5">
               <h3
-                className="text-2xl font-bold text-slate-900"
+                className="text-xl font-bold text-slate-900 sm:text-2xl"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 Security Gauge
@@ -411,11 +411,11 @@ export default function Profile() {
             </div>
           </aside>
 
-          <section className="profile-rise-delay-2 rounded-3xl border border-slate-200 bg-white/84 p-5 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)] md:p-6">
+          <section className="profile-rise-delay-2 rounded-2xl border border-slate-200 bg-white/84 p-4 shadow-[0_24px_52px_-36px_rgba(15,23,42,0.85)] sm:rounded-3xl sm:p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3
-                  className="text-2xl font-bold text-slate-900"
+                  className="text-xl font-bold text-slate-900 sm:text-2xl"
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
                   Password Control Center
@@ -512,20 +512,20 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-3 sm:p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Live Security Checklist</p>
                 <div className="mt-3 space-y-2">
                   {passwordChecks.map((item) => (
                     <div
                       key={item.label}
-                      className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm ${
+                      className={`flex items-start gap-2 rounded-lg border px-2.5 py-2 text-sm ${
                         item.ok
                           ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                           : "border-slate-200 bg-white text-slate-600"
                       }`}
                     >
                       <span
-                        className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                           item.ok ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"
                         }`}
                       >

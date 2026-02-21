@@ -17,9 +17,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto">
-        <Topbar name={user.name} />
-        <div className="p-6">
+      <div className="mx-auto w-full max-w-7xl px-3 pb-4 pt-2 sm:px-4 sm:pb-6 lg:px-6">
+        <Topbar name={user?.name} />
+        <div className="pt-4 sm:pt-6">
           <Outlet />
         </div>
       </div>
