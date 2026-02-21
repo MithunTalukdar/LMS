@@ -105,27 +105,86 @@ export default function Quiz() {
     return groups;
   }, [questions]);
 
+  const progressValue = Math.min(100, Math.max(0, Number(progress) || 0));
+  const progressSegments = 8;
+  const filledSegments = Math.round((progressValue / 100) * progressSegments);
+
+  const progressLabel =
+    progressValue >= 85
+      ? "Elite momentum"
+      : progressValue >= 60
+      ? "Strong pace"
+      : progressValue >= 30
+      ? "Steady build"
+      : "Kickstart phase";
+
+  const milestoneHint =
+    progressValue >= 100
+      ? "All milestones complete. You are fully ready."
+      : progressValue >= 75
+      ? "Final stretch. Finish pending tasks and lock in mastery."
+      : progressValue >= 40
+      ? "Good traction. Push to 75% for a stronger quiz setup."
+      : "Complete early tasks to build faster quiz readiness.";
+
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-6 shadow-sm">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-cyan-200/40 blur-2xl" />
+      <div className="relative isolate overflow-hidden rounded-[1.9rem] border border-cyan-200/80 p-5 shadow-[0_26px_56px_-36px_rgba(14,116,144,0.7)] md:p-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(125,211,252,0.45)_0%,transparent_36%),radial-gradient(circle_at_90%_16%,rgba(45,212,191,0.28)_0%,transparent_40%),linear-gradient(130deg,#f9fdff_0%,#eff9ff_52%,#f3fcf8_100%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_1px_1px,rgba(2,6,23,0.24)_1px,transparent_0)] [background-size:24px_24px]" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-300/30 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-teal-300/25 blur-3xl" />
 
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Course Journey</p>
-            <h2 className="mt-1 text-2xl font-bold text-slate-900">Progress Overview</h2>
+        <div className="relative">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-100/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-800">
+                <span className="h-2 w-2 rounded-full bg-sky-600" />
+                Course Journey
+              </p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Progress Overview</h2>
+              <p className="mt-2 text-sm text-slate-600">{milestoneHint}</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-center shadow-[0_16px_30px_-24px_rgba(15,23,42,0.9)]">
+              <p className="text-3xl font-extrabold text-slate-900">{progressValue}%</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{progressLabel}</p>
+            </div>
           </div>
 
-          <span className="rounded-full bg-slate-900 px-4 py-2 text-xl font-bold text-white">
-            {progress}%
-          </span>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+                tasksCompleted
+                  ? "border-emerald-200 bg-emerald-100 text-emerald-800"
+                  : "border-amber-200 bg-amber-100 text-amber-800"
+              }`}
+            >
+              {tasksCompleted ? "Quiz unlocked" : "Tasks required to unlock quiz"}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {100 - progressValue}% remaining
+            </span>
+          </div>
         </div>
 
-        <div className="relative mt-4 h-4 w-full rounded-full bg-white/70 ring-1 ring-sky-100">
+        <div className="relative mt-4 h-3.5 w-full overflow-hidden rounded-full bg-white/85 ring-1 ring-sky-100">
           <div
-            className="h-4 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all duration-700"
-            style={{ width: `${progress}%` }}
+            className="h-3.5 rounded-full bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 transition-all duration-700"
+            style={{ width: `${progressValue}%` }}
           />
+          <div className="pointer-events-none absolute inset-y-0 w-16 bg-gradient-to-r from-white/0 via-white/45 to-white/0 animate-shimmer-track" />
+        </div>
+
+        <div className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-8">
+          {Array.from({ length: progressSegments }).map((_, index) => (
+            <span
+              key={index}
+              className={`h-2 rounded-full ${
+                index < filledSegments ? "bg-gradient-to-r from-sky-500 to-cyan-500" : "bg-slate-200"
+              }`}
+            />
+          ))}
         </div>
       </div>
 

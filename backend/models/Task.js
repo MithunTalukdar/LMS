@@ -5,11 +5,22 @@ const submissionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
-  answer: String,
+  answer: {
+    type: String,
+    default: ""
+  },
   status: {
     type: String,
     enum: ["pending", "pass", "fail"],
     default: "pending"
+  },
+  comment: {
+    type: String,
+    default: ""
+  },
+  isViewed: {
+    type: Boolean,
+    default: true
   },
   submittedAt: {
     type: Date,

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/axios";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const CARD_THEMES = [
   {
@@ -216,6 +217,10 @@ export default function Certificate() {
           ? "Great start, keep stacking achievements"
           : "Complete courses to unlock your first certificate";
 
+  if (isLoading) {
+    return <LoadingOverlay message="Loading your certificates..." />;
+  }
+
   return (
     <div
       className="relative isolate overflow-hidden rounded-[2.2rem] border border-slate-200/85 p-4 md:p-7"
@@ -403,19 +408,13 @@ export default function Certificate() {
             </div>
 
             <div className="mt-5">
-              {isLoading && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-                  Loading your certificates...
-                </div>
-              )}
-
-              {!isLoading && error && (
+              {error && (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
                   {error}
                 </div>
               )}
 
-              {!isLoading && !error && certs.length === 0 && (
+              {!error && certs.length === 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900">No Certificates Yet</h3>
                   <p className="mt-2 text-sm text-slate-600">
@@ -430,7 +429,7 @@ export default function Certificate() {
                 </div>
               )}
 
-              {!isLoading && !error && certs.length > 0 && filteredCerts.length === 0 && (
+              {!error && certs.length > 0 && filteredCerts.length === 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900">No matching certificates</h3>
                   <p className="mt-2 text-sm text-slate-600">Try a different search or date filter.</p>
@@ -446,7 +445,7 @@ export default function Certificate() {
                 </div>
               )}
 
-              {!isLoading && !error && filteredCerts.length > 0 && (
+              {!error && filteredCerts.length > 0 && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {filteredCerts.map((cert, index) => {
                     const theme = CARD_THEMES[index % CARD_THEMES.length];

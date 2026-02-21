@@ -8,6 +8,7 @@ import {
   gradeTask,
   getStudentTasks,
   getTeacherTasks,
+  getTeacherSubmissionInbox,
   getTask,
   getStudentNotifications,
   markTaskAsRead,
@@ -31,6 +32,9 @@ router.get("/student/:courseId", protect(["student"]), getStudentTasks);
 
 /* 👨‍🏫 Teacher sees single task + submissions */
 router.get("/teacher/single/:taskId", protect(["teacher", "admin"]), getTask);
+
+/* 👨‍🏫 Teacher submission inbox across managed courses */
+router.get("/teacher/submissions", protect(["teacher", "admin"]), getTeacherSubmissionInbox);
 
 /* 👨‍🏫 Teacher sees tasks + student submissions */
 router.get(

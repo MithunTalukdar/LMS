@@ -4,6 +4,7 @@ import TeacherTasks from "./TeacherTasks";
 import TeacherAnalytics from "./TeacherAnalytics";
 import TeacherQuiz from "./TeacherQuiz";
 import TeacherQuizReview from "./TeacherQuizReview";
+import TeacherSubmissionInbox from "./TeacherSubmissionInbox";
 
 const LEVEL_SECTIONS = [
   {
@@ -116,6 +117,12 @@ export default function TeacherDashboard() {
     if (!exists) {
       setSelectedCourse("");
     }
+  }, [courses, selectedCourse]);
+
+  useEffect(() => {
+    if (selectedCourse) return;
+    if (courses.length === 0) return;
+    setSelectedCourse(courses[0]._id);
   }, [courses, selectedCourse]);
 
   const selectedCourseName = useMemo(() => {
@@ -667,6 +674,16 @@ export default function TeacherDashboard() {
           </div>
         </section>
 
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm md:p-5">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-bold text-slate-900 md:text-xl">Student Submission Dashboard</h3>
+            <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900">
+              Pass / Fail Verification
+            </span>
+          </div>
+          <TeacherSubmissionInbox />
+        </section>
+
         <section className="mt-6 space-y-5">
           {LEVEL_SECTIONS.map((section) => {
             const coursesInSection = groupedCourses[section.key];
@@ -713,16 +730,16 @@ export default function TeacherDashboard() {
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white/85 p-8 text-center shadow-sm">
             <h3 className="text-xl font-bold text-slate-900">No Course Selected</h3>
             <p className="mt-2 text-sm text-slate-600 md:text-base">
-              Select a course to manage tasks, quizzes, review attempts, and analytics.
+              Create your first course, then student submissions will appear in the Task Verification Panel for approval.
             </p>
           </div>
         ) : (
           <div className="mt-6 space-y-5">
             <section className="rounded-2xl border border-slate-200 bg-white/88 p-4 shadow-sm md:p-5">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-lg font-bold text-slate-900 md:text-xl">Task Management</h3>
+                <h3 className="text-lg font-bold text-slate-900 md:text-xl">Task Verification Panel</h3>
                 <span className="inline-flex rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
-                  Assign, Review, Grade
+                  Assign, Verify, Unlock Next Stage
                 </span>
               </div>
               <TeacherTasks courseId={selectedCourse} />

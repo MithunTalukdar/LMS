@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import api from "../utils/axios";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export const AuthContext = createContext();
 
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return <div className="text-center mt-20">Loading...</div>;
+    return <LoadingOverlay message="Restoring your session..." />;
   }
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import api from "../utils/axios";
 import { AuthContext } from "../context/AuthContext";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function AdminPanel() {
   const { user } = useContext(AuthContext);
@@ -31,7 +32,7 @@ export default function AdminPanel() {
     }
   };
 
-  if (loading) return <p>Loading users...</p>;
+  if (loading) return <LoadingOverlay message="Loading users..." />;
 
   return (
     <div>

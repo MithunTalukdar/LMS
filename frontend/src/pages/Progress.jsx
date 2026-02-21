@@ -2,6 +2,7 @@ import api from "../utils/axios";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link } from "react-router-dom";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const CARD_THEMES = [
   {
@@ -187,6 +188,10 @@ export default function Progress() {
     background: `conic-gradient(#0ea5e9 ${analytics.avgPercent * 3.6}deg, rgba(148,163,184,0.2) 0deg)`,
   };
 
+  if (isLoading) {
+    return <LoadingOverlay message="Loading your progress..." />;
+  }
+
   return (
     <div
       className="relative isolate overflow-hidden rounded-[2rem] border border-slate-200/80 p-5 md:p-7"
@@ -339,19 +344,13 @@ export default function Progress() {
         </section>
 
         <div className="mt-6">
-          {isLoading && (
-            <div className="rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm text-slate-600 shadow-sm">
-              Loading your progress...
-            </div>
-          )}
-
-          {!isLoading && error && (
+          {error && (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
               {error}
             </div>
           )}
 
-          {!isLoading && !error && progress.length === 0 && (
+          {!error && progress.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-6 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900">No Progress Yet</h3>
               <p className="mt-2 text-sm text-slate-600">
@@ -366,7 +365,7 @@ export default function Progress() {
             </div>
           )}
 
-          {!isLoading && !error && progress.length > 0 && filteredProgress.length === 0 && (
+          {!error && progress.length > 0 && filteredProgress.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-6 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900">No matching course</h3>
               <p className="mt-2 text-sm text-slate-600">
@@ -384,7 +383,7 @@ export default function Progress() {
             </div>
           )}
 
-          {!isLoading && !error && filteredProgress.length > 0 && (
+          {!error && filteredProgress.length > 0 && (
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {filteredProgress.map((item, index) => {
                 const percent = toPercent(item.percent);

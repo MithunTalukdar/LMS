@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../utils/axios";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const ROLE_META = {
   admin: {
@@ -119,6 +120,10 @@ export default function AdminDashboard() {
     };
   }, [users, filteredUsers.length]);
 
+  if (loading) {
+    return <LoadingOverlay message="Loading admin dashboard..." />;
+  }
+
   return (
     <div className="relative mx-auto w-full max-w-7xl px-2 md:px-4" style={{ fontFamily: "'Manrope', sans-serif" }}>
       <div className="pointer-events-none absolute -left-12 top-2 h-56 w-56 rounded-full bg-cyan-300/40 blur-3xl animate-drift-large" />
@@ -216,16 +221,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="mt-5 grid grid-cols-1 gap-3">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-20 rounded-2xl border border-white/70 bg-white/70 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : filteredUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white/70 px-5 py-10 text-center">
               <h3 className="text-xl font-bold text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 No users found
