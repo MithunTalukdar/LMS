@@ -383,11 +383,10 @@ export default function Certificate() {
                   <button
                     key={filter.key}
                     onClick={() => setActiveDateFilter(filter.key)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] transition ${
-                      isActive
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] transition ${isActive
                         ? "border-teal-500 bg-teal-500 text-white shadow-[0_12px_24px_-18px_rgba(13,148,136,0.9)]"
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     {filter.label}
                   </button>
